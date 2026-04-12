@@ -28,6 +28,8 @@ from dataclasses import dataclass, field
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from dashboard.backend.cost_tracker import record_usage as _record_usage
+
 BRIDGE_SYSTEM_PROMPT = """You are an expert cross-chain bridge security auditor. You specialize in bridge-specific vulnerabilities that static analysis tools miss.
 
 VULNERABILITY TAXONOMY — check each category systematically:
@@ -119,25 +121,60 @@ def analyze_with_agent_v2(source_code: str, contract_name: str = "Unknown") -> l
     Analyze a contract using the bridge-specific agent v2.
     Returns findings in a format compatible with benchmark_v2_runner.
     """
-    try:
-        from anthropic import Anthropic
-    except ImportError:
-        print("anthropic package not installed")
-        return []
+    use_bifrost = os.environ.get("USE_BIFROST") == "1"
+    model = os.environ.get("BRIDGE_MODEL", "anthropic/claude-sonnet-4-20250514")
 
-    client = Anthropic()
+    if use_bifrost:
+        from openai import OpenAI
+        client = OpenAI(
+            base_url=os.environ.get("BIFROST_URL", "http://localhost:8090/v1"),
+            api_key=os.environ.get("BIFROST_KEY", "sk-bf-dev-interactive"),
+        )
+        response = client.chat.completions.create(
+            model=model,
+            max_tokens=4096,
+            messages=[
+                {"role": "system", "content": BRIDGE_SYSTEM_PROMPT},
+                {"role": "user", "content": f"Analyze this bridge contract for vulnerabilities. Contract: {contract_name}\n\n{source_code}"},
+            ],
+        )
+        text = response.choices[0].message.content.strip()
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            _record_usage(
+                analyzer="agent_v2_bridge",
+                model=model,
+                contract=contract_name,
+                prompt_tokens=usage.prompt_tokens or 0,
+                completion_tokens=usage.completion_tokens or 0,
+            )
+    else:
+        try:
+            from anthropic import Anthropic
+        except ImportError:
+            print("anthropic package not installed")
+            return []
 
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=4096,
-        system=BRIDGE_SYSTEM_PROMPT,
-        messages=[{
-            "role": "user",
-            "content": f"Analyze this bridge contract for vulnerabilities. Contract: {contract_name}\n\n{source_code}",
-        }],
-    )
-
-    text = response.content[0].text.strip()
+        client = Anthropic()
+        response = client.messages.create(
+            model=model.replace("anthropic/", ""),
+            max_tokens=4096,
+            system=BRIDGE_SYSTEM_PROMPT,
+            messages=[{
+                "role": "user",
+                "content": f"Analyze this bridge contract for vulnerabilities. Contract: {contract_name}\n\n{source_code}",
+            }],
+        )
+        text = response.content[0].text.strip()
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            _record_usage(
+                analyzer="agent_v2_bridge",
+                model=model,
+                contract=contract_name,
+                prompt_tokens=getattr(usage, "input_tokens", 0),
+                completion_tokens=getattr(usage, "output_tokens", 0),
+            )
 
     # Strip markdown fences if present
     if text.startswith("```"):
@@ -184,8 +221,8 @@ def run_agent_v2_benchmark():
     from agents.benchmark_v2_runner import run_benchmark
     from agents.static_analyzer_v2 import analyze_static
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY not set.")
+    if not os.environ.get("ANTHROPIC_API_KEY") and os.environ.get("USE_BIFROST") != "1":
+        print("ANTHROPIC_API_KEY not set (or set USE_BIFROST=1).")
         print("Agent v2 architecture:")
         print(f"  System prompt: {len(BRIDGE_SYSTEM_PROMPT)} chars")
         print(f"  Taxonomy: 10 vulnerability categories")

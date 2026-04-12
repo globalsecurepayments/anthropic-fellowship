@@ -182,7 +182,14 @@ def fuzzy_match(found_type: str, gt_type: str) -> bool:
 
 def evaluate_contract(contract_name, source, ground_truth, analyzer_fn):
     """Evaluate an analyzer against one contract."""
-    findings = analyzer_fn(source)
+    import inspect
+    sig = inspect.signature(analyzer_fn)
+    if "contract_name" in sig.parameters:
+        findings = analyzer_fn(source, contract_name=contract_name)
+    elif len(sig.parameters) >= 2:
+        findings = analyzer_fn(source, contract_name)
+    else:
+        findings = analyzer_fn(source)
 
     gt_vulns = ground_truth["vulnerabilities"]
     gt_types = [v["type"] for v in gt_vulns]

@@ -13,8 +13,27 @@ AI agents add value over existing tools.
 """
 
 import json
+import os
 from dataclasses import dataclass, asdict
 from anthropic import Anthropic
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from dashboard.backend.cost_tracker import record_usage as _record_usage
+
+# Bifrost proxy support — route via OpenAI-compatible gateway
+BIFROST_URL = os.environ.get("BIFROST_URL", "http://localhost:8090/v1")
+BIFROST_KEY = os.environ.get("BIFROST_KEY", "sk-bf-dev-interactive")
+USE_BIFROST = os.environ.get("USE_BIFROST", "0") == "1"
+
+def _create_client():
+    """Create Anthropic client, optionally routing through Bifrost."""
+    if USE_BIFROST:
+        try:
+            from openai import OpenAI
+            return OpenAI(base_url=BIFROST_URL, api_key=BIFROST_KEY), "openai"
+        except ImportError:
+            raise RuntimeError("pip install openai — required for Bifrost routing")
+    return Anthropic(), "anthropic"
 
 
 SYSTEM_PROMPT = """You are an expert smart contract security auditor specializing in cross-chain bridge vulnerabilities.
@@ -140,7 +159,7 @@ def analyze_with_claude(
     Deep analysis using Claude. Combines static pre-screening results
     with LLM reasoning for comprehensive vulnerability detection.
     """
-    client = Anthropic()
+    client, mode = _create_client()
 
     # Build the user prompt with context
     context_parts = [f"Contract name: {contract_name}"]
@@ -160,15 +179,44 @@ Analyze this Solidity smart contract for security vulnerabilities:
 
 Provide your analysis as JSON."""
 
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=4096,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_prompt}],
-    )
+    model = os.environ.get("BRIDGE_MODEL", "anthropic/claude-sonnet-4-20250514")
 
-    # Parse response
-    response_text = response.content[0].text
+    if mode == "openai":
+        response = client.chat.completions.create(
+            model=model,
+            max_tokens=4096,
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": user_prompt},
+            ],
+        )
+        response_text = response.choices[0].message.content
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            _record_usage(
+                analyzer="claude_analyzer",
+                model=model,
+                contract=contract_name,
+                prompt_tokens=usage.prompt_tokens or 0,
+                completion_tokens=usage.completion_tokens or 0,
+            )
+    else:
+        response = client.messages.create(
+            model=model.replace("anthropic/", ""),
+            max_tokens=4096,
+            system=SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+        response_text = response.content[0].text
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            _record_usage(
+                analyzer="claude_analyzer",
+                model=model,
+                contract=contract_name,
+                prompt_tokens=getattr(usage, "input_tokens", 0),
+                completion_tokens=getattr(usage, "output_tokens", 0),
+            )
 
     # Strip markdown fences if present
     if "```json" in response_text:

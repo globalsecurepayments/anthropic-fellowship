@@ -22,9 +22,27 @@ import json
 import os
 import re
 import subprocess
+import sys
 from pathlib import Path
 from dataclasses import dataclass, field
 from anthropic import Anthropic
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from dashboard.backend.cost_tracker import record_usage as _record_usage
+
+USE_BIFROST = os.environ.get("USE_BIFROST") == "1"
+
+
+def _anthropic_tools_to_openai(tools):
+    """Convert Anthropic tool definitions to OpenAI function calling format."""
+    return [{
+        "type": "function",
+        "function": {
+            "name": t["name"],
+            "description": t["description"],
+            "parameters": t["input_schema"],
+        },
+    } for t in tools]
 
 
 SYSTEM_PROMPT = """You are an expert smart contract security auditor specializing in cross-chain bridge vulnerabilities. You have access to tools for analyzing contracts.
@@ -296,13 +314,9 @@ def run_agent(
     The agent iteratively uses tools to analyze the contract,
     submitting findings as it goes.
     """
-    client = Anthropic()
     audit = AgentAudit(contract_name=contract_name)
 
-    messages = [
-        {
-            "role": "user",
-            "content": f"""Analyze this bridge contract for security vulnerabilities.
+    user_msg = f"""Analyze this bridge contract for security vulnerabilities.
 Contract name: {contract_name}
 
 Source code:
@@ -315,42 +329,64 @@ Use the available tools to thoroughly analyze this contract:
 2. Run specific vulnerability checks
 3. Submit each finding you discover
 
-Be thorough — check all vulnerability categories.""",
-        }
-    ]
+Be thorough — check all vulnerability categories."""
 
-    for turn in range(max_turns):
-        response = client.messages.create(
-            model=model,
-            max_tokens=4096,
-            system=SYSTEM_PROMPT,
-            tools=TOOLS,
-            messages=messages,
+    if USE_BIFROST:
+        from openai import OpenAI
+        client = OpenAI(
+            base_url=os.environ.get("BIFROST_URL", "http://localhost:8090/v1"),
+            api_key=os.environ.get("BIFROST_KEY", "sk-bf-dev-interactive"),
         )
+        bifrost_model = os.environ.get("BRIDGE_MODEL", "anthropic/claude-sonnet-4-20250514")
+        oai_tools = _anthropic_tools_to_openai(TOOLS)
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_msg},
+        ]
 
-        audit.total_tokens += response.usage.input_tokens + response.usage.output_tokens
+        for turn in range(max_turns):
+            response = client.chat.completions.create(
+                model=bifrost_model,
+                max_tokens=4096,
+                tools=oai_tools,
+                messages=messages,
+            )
 
-        # Process response
-        assistant_content = response.content
-        messages.append({"role": "assistant", "content": assistant_content})
+            usage = response.usage
+            if usage:
+                audit.total_tokens += (usage.prompt_tokens or 0) + (usage.completion_tokens or 0)
+                _record_usage(
+                    analyzer="agentic_analyzer",
+                    model=bifrost_model,
+                    contract=contract_name,
+                    prompt_tokens=usage.prompt_tokens or 0,
+                    completion_tokens=usage.completion_tokens or 0,
+                )
 
-        # Check if we're done
-        if response.stop_reason == "end_turn":
-            # Extract any final text reasoning
-            for block in assistant_content:
-                if hasattr(block, "text"):
-                    audit.reasoning_trace.append(block.text)
-            break
+            choice = response.choices[0]
+            msg = choice.message
 
-        # Process tool calls
-        tool_results = []
-        for block in assistant_content:
-            if block.type == "tool_use":
+            # Build assistant message for history
+            assistant_msg = {"role": "assistant", "content": msg.content or ""}
+            if msg.tool_calls:
+                assistant_msg["tool_calls"] = [
+                    {"id": tc.id, "type": "function", "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
+                    for tc in msg.tool_calls
+                ]
+            messages.append(assistant_msg)
+
+            if msg.content:
+                audit.reasoning_trace.append(msg.content)
+
+            if not msg.tool_calls:
+                break
+
+            # Process tool calls
+            for tc in msg.tool_calls:
                 audit.tool_calls_made += 1
-                tool_name = block.name
-                tool_input = block.input
+                tool_name = tc.function.name
+                tool_input = json.loads(tc.function.arguments)
 
-                # Handle submit_finding specially
                 if tool_name == "submit_finding":
                     finding = AgentFinding(
                         vuln_type=tool_input.get("vuln_type", "unknown"),
@@ -366,17 +402,78 @@ Be thorough — check all vulnerability categories.""",
                 else:
                     result = handle_tool_call(tool_name, tool_input, source_code)
 
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tc.id,
                     "content": result,
                 })
+    else:
+        client = Anthropic()
+        messages = [{"role": "user", "content": user_msg}]
 
-            elif hasattr(block, "text"):
-                audit.reasoning_trace.append(block.text)
+        for turn in range(max_turns):
+            response = client.messages.create(
+                model=model,
+                max_tokens=4096,
+                system=SYSTEM_PROMPT,
+                tools=TOOLS,
+                messages=messages,
+            )
 
-        if tool_results:
-            messages.append({"role": "user", "content": tool_results})
+            audit.total_tokens += response.usage.input_tokens + response.usage.output_tokens
+            _record_usage(
+                analyzer="agentic_analyzer",
+                model=model,
+                contract=contract_name,
+                prompt_tokens=response.usage.input_tokens,
+                completion_tokens=response.usage.output_tokens,
+            )
+
+            # Process response
+            assistant_content = response.content
+            messages.append({"role": "assistant", "content": assistant_content})
+
+            # Check if we're done
+            if response.stop_reason == "end_turn":
+                for block in assistant_content:
+                    if hasattr(block, "text"):
+                        audit.reasoning_trace.append(block.text)
+                break
+
+            # Process tool calls
+            tool_results = []
+            for block in assistant_content:
+                if block.type == "tool_use":
+                    audit.tool_calls_made += 1
+                    tool_name = block.name
+                    tool_input = block.input
+
+                    if tool_name == "submit_finding":
+                        finding = AgentFinding(
+                            vuln_type=tool_input.get("vuln_type", "unknown"),
+                            severity=tool_input.get("severity", "medium"),
+                            location=tool_input.get("location", "unknown"),
+                            description=tool_input.get("description", ""),
+                            exploit_scenario=tool_input.get("exploit_scenario", ""),
+                            suggested_fix=tool_input.get("suggested_fix", ""),
+                            confidence=tool_input.get("confidence", 0.5),
+                        )
+                        audit.findings.append(finding)
+                        result = f"Finding #{len(audit.findings)} recorded: {finding.vuln_type} ({finding.severity})"
+                    else:
+                        result = handle_tool_call(tool_name, tool_input, source_code)
+
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": result,
+                    })
+
+                elif hasattr(block, "text"):
+                    audit.reasoning_trace.append(block.text)
+
+            if tool_results:
+                messages.append({"role": "user", "content": tool_results})
 
     return audit
 
@@ -411,8 +508,8 @@ def format_audit(audit: AgentAudit) -> str:
 if __name__ == "__main__":
     import sys
 
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ANTHROPIC_API_KEY not set. Showing agent architecture only.")
+    if not os.environ.get("ANTHROPIC_API_KEY") and os.environ.get("USE_BIFROST") != "1":
+        print("ANTHROPIC_API_KEY not set (or set USE_BIFROST=1). Showing agent architecture only.")
         print()
         print("Agent tools:")
         for t in TOOLS:

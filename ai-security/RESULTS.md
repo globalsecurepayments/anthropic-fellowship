@@ -156,3 +156,58 @@ TODO: Exploit replay verification (requires matching Foundry tests to patches).
 **The gap between static tools and LLM agents is exactly where bridge-specific compositional vulnerabilities live.** Static tools catch pattern-matching bugs (42% F1). Slither catches generic Solidity issues (11% F1). Neither can reason about the multi-step attack flows that caused $1.6B in bridge losses.
 
 This is the hypothesis BRIDGE-bench tests: **LLM agents should significantly outperform static tools on Tier 2 (compositional) vulnerabilities.**
+
+## Plan-Execute-Critique Ablation (2026-04-11)
+
+**Hypothesis:** Wrapping Agent v2 in a Plan -> Execute -> Critique reasoning
+topology from MultiMind-AI (author-grant 2026-04-11) improves F1 by lifting
+precision without sacrificing recall.
+
+**Baseline (Agent v2 single-prompt, USE_BIFROST=1, 22 contracts):**
+- Precision: 40.9%
+- Recall:    84.9%
+- F1:        55.2%
+- TP=45, FP=65, FN=8
+
+**Treatment (Agent v2 + Plan-Execute-Critique):**
+- Precision: 21.2%
+- Recall:    13.2%
+- F1:        16.3%
+- TP=7, FP=26, FN=46
+
+**Delta:**
+- DP: -19.7pp
+- DR: -71.7pp
+- DF1: -38.9pp
+
+**Result:** NEGATIVE (catastrophic)
+
+**Interpretation:** The Plan-Execute-Critique topology caused catastrophic recall
+collapse. 15 of 22 contracts returned 0 findings — the critique stage stripped
+all findings, including true positives. The critique prompt's "when in doubt,
+remove" directive was too aggressive: it treated ANY finding without exhaustive
+function-level evidence as suspect, even when the execute stage correctly
+identified real vulnerabilities. The plan stage also hurt: prepending audit
+strategy text as a Solidity comment confused the execute stage on several
+contracts ("Failed to parse response for Unknown"), causing it to produce fewer
+or malformed findings that the critique then zeroed out entirely.
+
+Root causes:
+1. Critique too aggressive — "remove when in doubt" + confidence threshold
+   filtering eliminated findings that were actually correct
+2. Plan-as-comment injection — prepending plan text as `/* ... */` in the
+   Solidity source confused the model on contracts where the plan was longer
+   than the contract itself
+3. No contract name propagation — benchmark runner passes only `source_code`
+   to the analyzer, so contract_name was always "Unknown", weakening the
+   plan and critique prompts
+
+**Lesson:** Reasoning topologies that add filtering stages between the model
+and the output are dangerous for recall-sensitive tasks. The baseline's
+single-prompt approach is better for security auditing because it errs on the
+side of reporting — false positives are cheaper than missed vulnerabilities.
+
+**Provenance:** Pattern from MultiMind-AI `multimind/pipeline.py` under
+author-direct learning grant from JitseLambrichts, 2026-04-11.
+Plan document: `~/Annunaki/Agent Vault/plans/bridge-bench-plan-execute-critique-ablation.md`
+Decision record: `~/Annunaki/Agent Vault/decisions/Adopt batch 2026-04-11.md`
