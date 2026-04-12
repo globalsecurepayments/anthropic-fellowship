@@ -176,30 +176,12 @@ def analyze_with_agent_v2(source_code: str, contract_name: str = "Unknown") -> l
                 completion_tokens=getattr(usage, "output_tokens", 0),
             )
 
-    # Strip markdown fences if present
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-        text = text.strip()
+    from agents.parse_utils import parse_llm_findings
 
-    try:
-        results = json.loads(text)
-        if isinstance(results, dict) and "vulnerabilities" in results:
-            results = results["vulnerabilities"]
-    except json.JSONDecodeError:
-        # Try to extract JSON array from the response
-        import re
-        match = re.search(r'\[.*\]', text, re.DOTALL)
-        if match:
-            try:
-                results = json.loads(match.group())
-            except json.JSONDecodeError:
-                print(f"  Failed to parse response for {contract_name}")
-                return []
-        else:
-            print(f"  No JSON found in response for {contract_name}")
-            return []
+    results = parse_llm_findings(text)
+    if not results:
+        print(f"  Failed to parse response for {contract_name}")
+        return []
 
     findings = []
     for r in results:

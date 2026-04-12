@@ -206,7 +206,7 @@ async def async_main() -> None:
     _gate_client = SyncOpenAI(base_url=BIFROST_URL, api_key=BIFROST_KEY)
 
     def optimized_analyzer(source: str, contract_name: str = "Unknown") -> list:
-        from apo.agent_wrapper import _parse_findings
+        from agents.parse_utils import parse_llm_findings
         from dataclasses import dataclass
 
         @dataclass
@@ -230,7 +230,7 @@ async def async_main() -> None:
                 ],
             )
             text = resp.choices[0].message.content if resp.choices else ""
-            findings = _parse_findings(text or "")
+            findings = parse_llm_findings(text or "")
         except Exception as e:
             print(f"  [Gate error on {contract_name}]: {e}")
             findings = []

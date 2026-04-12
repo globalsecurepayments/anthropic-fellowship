@@ -37,6 +37,7 @@ from agentlightning.types import PromptTemplate
 
 from apo.run_config import BIFROST_URL, BIFROST_KEY, BIFROST_MODEL
 from apo.reward import compute_contract_reward
+from agents.parse_utils import parse_llm_findings
 
 
 # ---------------------------------------------------------------------------
@@ -47,56 +48,6 @@ class BridgeBenchTask(TypedDict):
     contract_name: str
     source: str
     ground_truth: dict
-
-
-# ---------------------------------------------------------------------------
-# Response parser (reused from agent_v2_bridge_critique.py pattern)
-# ---------------------------------------------------------------------------
-
-def _parse_findings(text: str) -> list[dict[str, Any]]:
-    """Parse vulnerability findings from LLM response text.
-    Handles: direct JSON, markdown-fenced JSON, embedded array extraction."""
-    if not text:
-        return []
-
-    # Strip markdown fences
-    if "```json" in text:
-        text = text.split("```json")[1].split("```")[0]
-    elif text.startswith("```"):
-        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-        text = text.strip()
-
-    # Try direct parse
-    try:
-        result = json.loads(text.strip())
-        if isinstance(result, dict):
-            return result.get("vulnerabilities", [])
-        if isinstance(result, list):
-            return result
-    except json.JSONDecodeError:
-        pass
-
-    # Try extracting JSON array
-    match = re.search(r"\[.*\]", text, re.DOTALL)
-    if match:
-        try:
-            return json.loads(match.group())
-        except json.JSONDecodeError:
-            pass
-
-    # Try extracting JSON object
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if match:
-        try:
-            result = json.loads(match.group())
-            if isinstance(result, dict):
-                return result.get("vulnerabilities", [])
-        except json.JSONDecodeError:
-            pass
-
-    return []
 
 
 # ---------------------------------------------------------------------------
@@ -209,7 +160,7 @@ def bridge_bench_analyzer(task: BridgeBenchTask, prompt_template: PromptTemplate
         # Bifrost proxy response — try raw content extraction
         response_text = str(response)
 
-    findings = _parse_findings(response_text)
+    findings = parse_llm_findings(response_text)
 
     # Compute deterministic F1 reward against ground truth
     reward = compute_contract_reward(findings, task["ground_truth"])

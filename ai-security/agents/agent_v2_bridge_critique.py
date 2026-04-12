@@ -173,44 +173,23 @@ def _findings_to_json(findings: list[AgentV2Finding]) -> str:
 
 def _parse_findings_json(text: str) -> Optional[list[AgentV2Finding]]:
     """Parse the critique stage output. Returns None on parse failure."""
-    # Strip markdown fences (borrowed pattern from agent_v2_bridge.py)
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-        text = text.strip()
+    from agents.parse_utils import parse_llm_findings
 
-    try:
-        results = json.loads(text)
-        if isinstance(results, dict) and "vulnerabilities" in results:
-            results = results["vulnerabilities"]
-    except json.JSONDecodeError:
-        match = re.search(r"\[.*\]", text, re.DOTALL)
-        if not match:
-            return None
-        try:
-            results = json.loads(match.group())
-        except json.JSONDecodeError:
-            return None
-
-    if not isinstance(results, list):
+    results = parse_llm_findings(text)
+    if not results:
         return None
 
-    findings = []
-    for r in results:
-        if not isinstance(r, dict):
-            continue
-        findings.append(
-            AgentV2Finding(
-                vuln_type=r.get("vuln_type", "unknown"),
-                severity=r.get("severity", "medium"),
-                location=r.get("location", "unknown"),
-                description=r.get("description", ""),
-                exploit_scenario=r.get("exploit_scenario", ""),
-                confidence=r.get("confidence", 0.5),
-            )
+    return [
+        AgentV2Finding(
+            vuln_type=r.get("vuln_type", r.get("type", "unknown")),
+            severity=r.get("severity", "medium"),
+            location=r.get("location", "unknown"),
+            description=r.get("description", ""),
+            exploit_scenario=r.get("exploit_scenario", ""),
+            confidence=r.get("confidence", 0.5),
         )
-    return findings
+        for r in results
+    ]
 
 
 def _run_critique(
