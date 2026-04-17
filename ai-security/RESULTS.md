@@ -211,3 +211,72 @@ side of reporting — false positives are cheaper than missed vulnerabilities.
 author-direct learning grant from JitseLambrichts, 2026-04-11.
 Plan document: `~/Annunaki/Agent Vault/plans/bridge-bench-plan-execute-critique-ablation.md`
 Decision record: `~/Annunaki/Agent Vault/decisions/Adopt batch 2026-04-11.md`
+
+## Evidence Ladder Phase 1 — Reporting Gate (2026-04-17)
+
+**Hypothesis:** Tagging Agent v2 findings with a 6-rung evidence level
+(suspicion -> static_corroboration -> crash_reproduced -> ...) and gating
+reported results at >= static_corroboration would remove false positives
+without the uniform recall collapse seen in the critique ablation and APO
+experiment. Pattern extracted from clearwing (Lazarus AI, MIT).
+
+**Design:** Single-pass — LLM runs once, findings are tagged via static
+analyzer cross-check, then split into reported (>= static_corroboration)
+vs below-threshold (suspicion). Same findings, two views. Eliminates
+LLM run-to-run variance from the comparison.
+
+**Baseline (all findings, same LLM run):**
+- Precision: 45.9%
+- Recall:    84.9%
+- F1:        59.6%
+- TP=45, FP=53, FN=8
+
+**Evidence-gated (>= static_corroboration):**
+- Precision: 85.0%
+- Recall:    32.1%
+- F1:        46.6%
+- TP=17, FP=3, FN=36
+
+**Evidence distribution:** 78 suspicion, 20 corroborated (out of 98 findings)
+
+**Delta:**
+- DP: +39.1pp (precision rescue works)
+- DR: -52.8pp (recall catastrophe)
+- DF1: -13.0pp
+
+**Result:** ABORT (recall floor breached by 52.8pp)
+
+**Interpretation:** The evidence ladder tagging works correctly — it
+accurately identifies which findings have static corroboration and which
+are LLM-only. The problem is structural: 62% of true positives (28 of 45)
+are LLM-only findings with NO static corroboration possible. These are
+exactly the compositional vulnerabilities (flash loan + oracle, arbitrary
+calldata + approval drain, governance + timelock bypass) that make the LLM
+valuable — the static analyzer has no pattern for them by definition.
+
+Requiring static corroboration as a filter threshold is fundamentally
+incompatible with a benchmark whose thesis is "LLMs catch what static
+tools miss." The gate filters 50 FPs (excellent) but also 28 TPs (fatal).
+
+**Structural finding:** The evidence ladder is a valid GRADING tool (tag
+findings for downstream prioritization) but NOT a valid FILTERING tool
+for BRIDGE-bench. This is the third consecutive precision-fix attempt to
+fail on the same fundamental constraint: the baseline's recall comes from
+findings that lack external corroboration, and any filter that requires
+corroboration destroys recall proportionally.
+
+**Three-experiment precision-fix summary:**
+
+| Experiment | Mechanism | DP | DR | Verdict |
+|---|---|---|---|---|
+| Critique ablation (2026-04-11) | "Remove when in doubt" | -19.7pp | -71.7pp | ABORT |
+| APO experiment (2026-04-12) | Specificity pressure | +7.2pp | -19.1pp | ABORT |
+| Evidence Ladder gate (2026-04-17) | Static corroboration filter | +39.1pp | -52.8pp | ABORT |
+
+All three improve precision at catastrophic recall cost. The pattern is
+now confirmed: BRIDGE-bench's precision weakness cannot be fixed by any
+post-hoc filtering mechanism because the LLM's true positives and false
+positives are both at the same evidence level (suspicion).
+
+**Provenance:** Evidence Ladder framework from clearwing (Lazarus AI, MIT).
+Decision record: `~/Annunaki/Agent Vault/decisions/Verdict batch 2026-04-17b.md`
