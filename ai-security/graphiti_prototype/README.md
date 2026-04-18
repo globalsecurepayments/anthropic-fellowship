@@ -3,34 +3,24 @@
 Validates graphiti (Zep AI, Apache 2.0) on Kuzu backend (no Neo4j) for
 bi-temporal benchmark run history.
 
-## Status: BLOCKED
+## Status: VALIDATED ✓
 
-**Blocker:** graphiti's Kuzu driver does not create full-text search (FTS)
-indices during `build_indices_and_constraints()`. The FTS index
-`node_name_and_summary` on the `Entity` table is required for entity
-resolution during `add_episode()`. Without it, the core ingestion pipeline
-fails with:
+3 episodes ingested, 2 temporal queries answered. Zero Neo4j dependency.
 
-```
-RuntimeError: Binder exception: Table Entity doesn't have an index with
-name node_name_and_summary.
-```
+### Results
 
-This is a graphiti-internal issue (Kuzu driver schema initialization is
-incomplete relative to what the search module expects). Neo4j backend
-likely creates the equivalent indices correctly.
+| Episode | Content | Entities | Edges | Time |
+|---------|---------|----------|-------|------|
+| results.json (2026-04-09) | baseline | 2 | 1 | 31.9s |
+| results_critique_ablation.json (2026-04-11) | critique head-to-head | 23 | 22 | 40.5s |
+| results_evidence_ladder.json (2026-04-17) | evidence ladder | 5 | 2 | 8.4s |
 
-### What Works
+Temporal query "what did agent_v2_bridge believe about WormholeStyle?" returned
+10 edges with correct `valid_at` timestamps, including facts from the 2026-04-11
+critique ablation run.
 
-- Kuzu driver initializes correctly (schema tables created)
-- LLM entity extraction via Bifrost (gpt-4o-mini) works
-- Embeddings via Ollama nomic-embed-text work
-- Zero Neo4j dependency confirmed
-
-### What Doesn't Work
-
-- FTS indices not created → entity resolution fails → `add_episode()` crashes
-- `group_id` parameter triggers `_database` attribute error (separate bug)
+Date-filtered query (created_at >= 2026-04-10) correctly excluded the 2026-04-09
+baseline from primary results.
 
 ## Install
 
@@ -67,7 +57,10 @@ BRIDGE_MODEL=openai/gpt-4o-mini \
 
 ## Kuzu-Specific Gotchas
 
-1. **FTS indices not created** — BLOCKER. See status above.
+1. **FTS indices not created by driver** — graphiti's KuzuDriver.build_indices_and_constraints()
+   is a no-op. The FTS indices defined in graph_queries.py are never called.
+   **Workaround:** manually call `CREATE_FTS_INDEX` for all 4 tables after schema
+   init (see `ingest_runs.py` lines 171-185). File upstream issue.
 2. **`group_id` parameter** — triggers `AttributeError: 'KuzuDriver' object
    has no attribute '_database'`. Workaround: pass `group_id=None`.
 3. **DB path** — Kuzu expects a file path, not a directory. `KuzuDriver(db="path")`
@@ -76,12 +69,19 @@ BRIDGE_MODEL=openai/gpt-4o-mini \
    OpenAI's Responses API. Anthropic via Bifrost returns schema validation errors
    (`$defs/ExtractedEntity`). Use `openai/gpt-4o-mini` not Anthropic.
 
-## Next Steps (if FTS blocker is resolved)
+## Benchmark Notes
 
-- File a GitHub issue on graphiti-core for missing Kuzu FTS index creation
-- OR: manually create the FTS index before calling `add_episode()`
-- OR: use graphiti from source (`pip install -e ~/Annunaki/github-sources/graphiti[kuzu]`)
-  and patch the Kuzu driver's schema queries
+- Schema + FTS index build: 0.80s
+- Episode ingestion: 8-41s per episode (LLM-bound, depends on content size)
+- Temporal query: 1.4-2.4s (includes embedding + graph traversal)
+- Memory: Kuzu in-process, ~50MB for 3 episodes with 30 entities
+- Kuzu DB on disk: ~2MB for this prototype
+
+## Next Steps
+
+- File upstream issue on graphiti-core for missing Kuzu FTS index creation
+- Evaluate graphiti MCP server integration with BRIDGE-bench dashboard
+- Ingest full run history (all results*.json + APO results) as episodes
 
 ## Decision Context
 
