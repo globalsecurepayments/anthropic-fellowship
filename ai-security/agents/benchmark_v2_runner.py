@@ -14,6 +14,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from benchmarks.bridge_contracts_v2 import ALL_CONTRACTS
+from benchmarks.bridge_exploits import TAXONOMY_VERSION
 from agents.static_analyzer_v2 import analyze_static, StaticFinding
 
 
@@ -231,12 +232,19 @@ def run_benchmark(analyzer_fn, dataset=None, verbose=True):
     if dataset is None:
         dataset = ALL_CONTRACTS
 
+    # Drift Sentinel (Stummer P3) — check dataset integrity before scoring
+    from benchmarks.drift_sentinel import check_drift
+    drift = check_drift(dataset)
+    if drift.drifted:
+        print(f"  WARNING: {drift.message}")
+
     results = []
     total_tp, total_fp, total_fn = 0, 0, 0
 
     if verbose:
         print("BRIDGE-bench v2 — Static Analyzer Evaluation")
         print(f"Dataset: {len(dataset)} contracts")
+        print(f"Taxonomy version: {TAXONOMY_VERSION}")
         print("=" * 70)
 
     for name, data in dataset.items():
@@ -301,6 +309,7 @@ def run_benchmark(analyzer_fn, dataset=None, verbose=True):
             print(f"  {vuln:<40} false positive {count}x")
 
     return {
+        "taxonomy_version": TAXONOMY_VERSION,
         "results": results,
         "precision": precision,
         "recall": recall,

@@ -1,0 +1,28 @@
+{
+  "hash": "3d0399f4ffdf8d7b4a83a52b8574e28ea500cdb9cec3ea020ea70ce0734c2c09",
+  "contract_count": 22,
+  "per_contract": {
+    "BadProxyBridge": "1405476990d080b5244ee8e68686aebc804ea46e921d6bbb403b7e4b03d96c5f",
+    "CCTPStyle": "293215539d4be99a5cbdbf36b9ff10bfb3a573cedbb4185cd7ed034df7d1e431",
+    "DelegateCallBridge": "3813c73277d1c8921badf566dda2e83a161467bfac46fba3fac931cdd504d408",
+    "DoubleSpend": "e35eb52cd88a2f551db8c4424f5a87931ec0c0eda6be0bd4bf307aefdd75f382",
+    "DriftStyle": "18ed27e80748b96ce9cc83c5e015366ab0704f5d9842ea14dfa334713badca8f",
+    "FeeOnTransfer": "ad9c8e868f8dd54d1d721b1877f9a665f50a95aaa18dae424cdc96c9336589f9",
+    "FrontRun": "1d5f4406f59ea469379a695e2bca1264bfea3aa49317882d93096eb402588459",
+    "GasBomb": "2e023e8d59b4aa4d3d241b28f061b7673c55567548a2dd35a9d328ce35d502a7",
+    "HarmonyStyle": "eb1a652bf0cf38218e2f797b37fa61ddd752a03140b840c9772eb0e07da411a5",
+    "LiFiStyle": "08c239d9c7013ac0c6d515db75279d741683e007d87d53199b31240b60c30fba",
+    "MalleableSig": "13d05cd2cb86e2dd4f34b496eaa3d248bcfbb3151d4d827189dcb79a3e9f9059",
+    "MissingEvents": "13ac51f8fb11b2407dd6f7a280aa811154399f18140e0f296f42d11b8b16619d",
+    "NomadStyle": "087e19e29f28a1131e7c7d197f4572a311cc0246ee1b56fa9d4dc51a8bbf522b",
+    "OracleManipulation": "06d0390e37430f0d08fc8bb548e6ac1cc7e5022f0322b5728ff872e0a09ae196",
+    "PolyNetworkStyle": "f9413fa7f2ed7a83ecd6841fefb38ca612743c1a6be18ec16a8bea638a1b7f6b",
+    "QubitStyle": "5352f78ada8549417f792bf344b2a424f683e0cdc8d3dfed26e906a7ec0ba696",
+    "ReplayBridge": "54c006e9cb6b7c2e802ba5f9d3a94407036add62e5a89b12d88a25d6b73d4f7b",
+    "RoninStyle": "c6b6b89e771851b244781975b415fab5c7997bd219e960e31b9ad475ffc83118",
+    "SelfDestruct": "fef1e9fa8394e14f9e63a4b0cf8ff020cf34eafd11a1676390880f2db60a46a9",
+    "TimelockBypass": "6d503f674297dd7ebdd711c101e7266b4c9373dc929c88e72aead2a8f8f567aa",
+    "UncheckedTransfer": "c1e630a7498702b13fe32b1e651df4761c0b7f48181aa6722ef9737fbba36165",
+    "WormholeStyle": "25bba3e11291a4c2617c3645a03feb912f766ed37b5444d4a85644be2a933fd9"
+  }
+}
