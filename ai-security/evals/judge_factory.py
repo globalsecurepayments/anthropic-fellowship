@@ -31,6 +31,15 @@ def _assert_bifrost_url(url: str) -> None:
         )
 
 
+# Default judge: openai/gpt-4o-mini via Bifrost. Two reasons:
+#   1. AXI separate-model judge rule — judge MUST differ from the analyzer
+#      (BRIDGE_MODEL defaults to anthropic/claude-sonnet-4-20250514).
+#   2. G-Eval requires response_format=json_schema. Bifrost's OpenAI-compat
+#      layer rejects this for anthropic/* models ("does not support output
+#      format"); openai/* models accept it.
+DEFAULT_JUDGE_MODEL = "openai/gpt-4o-mini"
+
+
 def make_judge(
     model: Optional[str] = None,
     base_url: Optional[str] = None,
@@ -40,11 +49,10 @@ def make_judge(
     """Return a DeepEval-compatible judge wired through Bifrost.
 
     Defaults:
-        model    — env JUDGE_MODEL, then BRIDGE_MODEL,
-                   then "anthropic/claude-sonnet-4-20250514".
-                   Wrapped as openai/<id> so litellm uses the OpenAI-compat
-                   transport against Bifrost; Bifrost routes to the underlying
-                   provider.
+        model    — env JUDGE_MODEL, then DEFAULT_JUDGE_MODEL
+                   ("openai/gpt-4o-mini"). Do NOT default to BRIDGE_MODEL —
+                   that's the analyzer; AXI rule forbids judging with the same
+                   model.
         base_url — env BIFROST_URL, then http://localhost:8090/v1.
         api_key  — env BIFROST_KEY, then "sk-bf-dev-interactive".
     """
@@ -56,11 +64,12 @@ def make_judge(
     raw_model = (
         model
         or os.environ.get("JUDGE_MODEL")
-        or os.environ.get("BRIDGE_MODEL")
-        or "anthropic/claude-sonnet-4-20250514"
+        or DEFAULT_JUDGE_MODEL
     )
     # Force OpenAI-compat transport so litellm hits Bifrost rather than the
-    # Anthropic SDK. Bifrost preserves the inner "anthropic/<id>" routing key.
+    # Anthropic SDK. The openai/ prefix may double-up (openai/openai/gpt-4o-mini)
+    # — litellm strips one layer and routes to Bifrost; Bifrost dispatches to
+    # the inner provider.
     litellm_model = raw_model if raw_model.startswith("openai/") else f"openai/{raw_model}"
 
     return LiteLLMModel(
@@ -71,4 +80,4 @@ def make_judge(
     )
 
 
-__all__ = ["make_judge", "BIFROST_URL"]
+__all__ = ["make_judge", "BIFROST_URL", "DEFAULT_JUDGE_MODEL"]
