@@ -1,0 +1,100 @@
+# BRIDGE-bench architectural rules — sentrux Phase 1 starter set
+#
+# Authority: CR #755 (delegation from agent-vault, Verdict batch 2026-04-30).
+# Enforced by `sentrux check` (CLI) and `check_rules` MCP tool.
+# Exit code 0 = pass, 1 = violations.
+#
+# Sentrux supported constraint keys (as of v0.5.7):
+#   min_quality, min_modularity, min_acyclicity, min_depth, min_equality,
+#   min_redundancy, max_coupling_score, max_cycles, max_cc, max_file_lines,
+#   max_fn_lines, no_god_files, max_upward_violations
+# `max_fan_out` is NOT natively supported in v0.5.7 — see note under
+# [constraints] for the proxy used.
+#
+# Layer-order convention (per sentrux-core/src/metrics/rules/mod.rs comment):
+#   order=0 is the OUTERMOST/TOP layer. Higher order = more foundational.
+#   Violation rule: from_ord > to_ord  (a deeper layer must not import a
+#   shallower one). Example: dashboard (0) importing agents (4) is fine;
+#   agents (4) importing dashboard (0) is a violation.
+
+[constraints]
+# Cyclomatic-complexity ceiling. Phase-1 target sized to current baseline
+# (max baseline CC sits well under 25 — no functions flagged). Set tight
+# enough to prevent regression without forcing immediate refactor.
+max_cc = 25
+
+# Function-length ceiling — set to 200 so the 5 currently-long functions
+# (agentic_analyzer.run_agent 174, evidence_benchmark.run_evidence_benchmark
+# 168, run_apo.async_main 197, ingest_runs.main 168, Config.t.sol::test_writeConfig
+# 121) pass on day 1. Ratchet target: drop to 150 once analyzers are split.
+max_fn_lines = 200
+
+# Zero tolerance on circular imports — already 0 in baseline; keep it there.
+max_cycles = 0
+
+# Coupling-score ceiling. Baseline = 0.165. This serves as a proxy for the
+# CR's "max-fan-out on contract-iteration loops" requirement: high fan-out
+# from a contract-iteration site shows up as elevated coupling on that file.
+# Sentrux v0.5.7 does not expose per-loop fan-out; revisit when v0.6+ adds it.
+max_coupling_score = 0.30
+
+# God-file detection off for Phase 1 (baseline = 1, likely a long benchmarks
+# runner). Toggle to true once the existing god file is split.
+no_god_files = false
+
+# ── Layers ─────────────────────────────────────────────────────────────────
+#
+# Order matches actual call direction in BRIDGE-bench (excluding benchmarks/):
+#   dashboard (0, outermost — visualizes everything below)
+#     ↓ depends on
+#   apo (1, optimizer over evals)
+#     ↓ depends on
+#   evals (2, harness that scores agents)
+#     ↓ depends on
+#   agents (3, foundational unit-under-test)
+#
+# This structure enforces both boundary callouts in CR #755:
+#   - agents (3) ↛ dashboard (0)   (from_ord=3 > to_ord=0  ⇒ violation)
+#   - evals  (2) ↛ apo       (1)   (from_ord=2 > to_ord=1  ⇒ violation)
+# The explicit [[boundaries]] below pin those two specific guarantees with
+# named, self-documenting reasons that survive future layer-order changes.
+#
+# benchmarks/ is INTENTIONALLY OMITTED from layers because it co-locates
+# two semantic concerns: high-level runners (bridge_bench.py, fetch_contracts.py)
+# AND foundational fixture/spec data (bridge_contracts_v2.py, test_contracts.py,
+# bridge_exploits.py) that agents/evals/apo all import legitimately. A proper
+# fix is to split benchmarks/ into benchmarks/runners/ + benchmarks/fixtures/
+# in a follow-up CR; until then a single layer over benchmarks/** generates
+# 16 false positives and would force `sentrux check` to be ignored.
+
+[[layers]]
+name = "dashboard"
+paths = ["dashboard/**"]
+order = 0
+
+[[layers]]
+name = "apo"
+paths = ["apo/**"]
+order = 1
+
+[[layers]]
+name = "evals"
+paths = ["evals/**"]
+order = 2
+
+[[layers]]
+name = "agents"
+paths = ["agents/**"]
+order = 3
+
+# ── Boundaries (explicit, named) ───────────────────────────────────────────
+
+[[boundaries]]
+from = "agents/**"
+to = "dashboard/**"
+reason = "Agents are the unit under test; they must not depend on the visualization surface."
+
+[[boundaries]]
+from = "evals/**"
+to = "apo/**"
+reason = "Evals are a substrate for APO. APO calls into evals, not the reverse — circular dependency would corrupt optimization signal."
