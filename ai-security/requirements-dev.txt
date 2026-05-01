@@ -1,0 +1,6 @@
+# Dev / eval dependencies for BRIDGE-bench.
+# Install with: pip install -r requirements-dev.txt
+# Adopted 2026-04-27 — see ~/Annunaki/Agent\ Vault/decisions/Adopt\ deepeval\ 2026-04-27.md
+
+deepeval>=3.9.8,<4.0.0
+pytest>=7.0

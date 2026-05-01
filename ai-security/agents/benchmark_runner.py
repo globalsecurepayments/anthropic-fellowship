@@ -22,7 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from agents.static_analyzer_v2 import analyze_static, StaticFinding
-from benchmarks.test_contracts import TEST_CONTRACTS
+from benchmarks.fixtures.test_contracts import TEST_CONTRACTS
 
 
 # Fuzzy type matching for evaluation
@@ -142,8 +142,8 @@ def run_static_benchmark() -> dict:
 
 
 def run_claude_benchmark() -> dict | None:
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("\nSkipping Claude analysis (set ANTHROPIC_API_KEY to enable)")
+    if not os.environ.get("ANTHROPIC_API_KEY") and os.environ.get("USE_BIFROST") != "1":
+        print("\nSkipping Claude analysis (set ANTHROPIC_API_KEY or USE_BIFROST=1 to enable)")
         return None
 
     from agents.claude_analyzer import analyze_with_claude, static_prescreen

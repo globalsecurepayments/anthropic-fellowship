@@ -453,7 +453,7 @@ def _extract_function_body(source: str, func_name: str | None) -> str | None:
 
 
 if __name__ == "__main__":
-    from benchmarks.test_contracts import TEST_CONTRACTS
+    from benchmarks.fixtures.test_contracts import TEST_CONTRACTS
 
     print("Enhanced Static Analyzer — Bridge Vulnerability Detection")
     print("=" * 60)

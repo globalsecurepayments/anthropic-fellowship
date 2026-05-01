@@ -1,0 +1,117 @@
+# BRIDGE-bench architectural rules — sentrux Phase 1 starter set
+#
+# Authority: CR #755 (delegation from agent-vault, Verdict batch 2026-04-30).
+# Enforced by `sentrux check` (CLI) and `check_rules` MCP tool.
+# Exit code 0 = pass, 1 = violations.
+#
+# Sentrux supported constraint keys (as of v0.5.7):
+#   min_quality, min_modularity, min_acyclicity, min_depth, min_equality,
+#   min_redundancy, max_coupling_score, max_cycles, max_cc, max_file_lines,
+#   max_fn_lines, no_god_files, max_upward_violations
+# `max_fan_out` is NOT natively supported in v0.5.7 — see note under
+# [constraints] for the proxy used.
+#
+# Layer-order convention (per sentrux-core/src/metrics/rules/mod.rs comment):
+#   order=0 is the OUTERMOST/TOP layer. Higher order = more foundational.
+#   Violation rule: from_ord > to_ord  (a deeper layer must not import a
+#   shallower one). Example: dashboard (0) importing agents (4) is fine;
+#   agents (4) importing dashboard (0) is a violation.
+
+[constraints]
+# Cyclomatic-complexity ceiling. Phase-1 target sized to current baseline
+# (max baseline CC sits well under 25 — no functions flagged). Set tight
+# enough to prevent regression without forcing immediate refactor.
+max_cc = 25
+
+# Function-length ceiling — ratcheted from 200 → 150 in CR #755 follow-up
+# after extracting helpers from the 4 long Python functions:
+#   apo/run_apo.py:async_main 197 → 143 (extracted _build_apo_algo,
+#     _build_optimized_analyzer module-level helpers)
+#   agents/agentic_analyzer.py:run_agent 174 → 141 (extracted
+#     _process_tool_call dispatch shared between Bifrost + Anthropic loops)
+#   graphiti_prototype/ingest_runs.py:main 168 → 148 (extracted
+#     _create_fts_indices Kuzu-driver patch helper)
+#   agents/evidence_benchmark.py:run_evidence_benchmark 168 → 142
+#     (extracted _findings_from_tagged_dicts, _aggregate_metrics)
+# foundry/lib/forge-std test_writeConfig 121 lines passes 150 trivially —
+# vendored third-party test, not ours to refactor.
+max_fn_lines = 150
+
+# Zero tolerance on circular imports — already 0 in baseline; keep it there.
+max_cycles = 0
+
+# Coupling-score ceiling. Baseline = 0.165. This serves as a proxy for the
+# CR's "max-fan-out on contract-iteration loops" requirement: high fan-out
+# from a contract-iteration site shows up as elevated coupling on that file.
+# Sentrux v0.5.7 does not expose per-loop fan-out; revisit when v0.6+ adds it.
+max_coupling_score = 0.30
+
+# God-file detection off for Phase 1 (baseline = 1, likely a long benchmarks
+# runner). Toggle to true once the existing god file is split.
+no_god_files = false
+
+# ── Layers ─────────────────────────────────────────────────────────────────
+#
+# Order matches actual call direction in BRIDGE-bench:
+#   benchmarks/runners (0, top — entrypoints calling agents+evals+apo+fixtures)
+#   dashboard          (0, top — visualization surface, parallel)
+#     ↓ depends on
+#   apo (1, optimizer over evals)
+#     ↓ depends on
+#   evals (2, harness that scores agents)
+#     ↓ depends on
+#   agents (3, the unit-under-test)
+#     ↓ depends on
+#   benchmarks/fixtures (4, foundational data — contract specs, exploit catalog,
+#                         drift sentinel utilities, test contracts)
+#
+# This structure enforces all named guarantees:
+#   - agents (3) ↛ dashboard (0)            ⇒ layer violation
+#   - evals  (2) ↛ apo (1)                  ⇒ layer violation
+#   - benchmarks/fixtures (4) ↛ everything  ⇒ fixtures stay pure data
+#
+# Phase 1 of CR #755 had benchmarks/ omitted because the directory mixed
+# runners and fixture data; this follow-up split it into runners/ + fixtures/
+# so both halves can carry layer rules without false positives.
+
+[[layers]]
+name = "benchmarks-runners"
+paths = ["benchmarks/runners/**"]
+order = 0
+
+[[layers]]
+name = "dashboard"
+paths = ["dashboard/**"]
+order = 0
+
+[[layers]]
+name = "apo"
+paths = ["apo/**"]
+order = 1
+
+[[layers]]
+name = "evals"
+paths = ["evals/**"]
+order = 2
+
+[[layers]]
+name = "agents"
+paths = ["agents/**"]
+order = 3
+
+[[layers]]
+name = "benchmarks-fixtures"
+paths = ["benchmarks/fixtures/**"]
+order = 4
+
+# ── Boundaries (explicit, named) ───────────────────────────────────────────
+
+[[boundaries]]
+from = "agents/**"
+to = "dashboard/**"
+reason = "Agents are the unit under test; they must not depend on the visualization surface."
+
+[[boundaries]]
+from = "evals/**"
+to = "apo/**"
+reason = "Evals are a substrate for APO. APO calls into evals, not the reverse — circular dependency would corrupt optimization signal."

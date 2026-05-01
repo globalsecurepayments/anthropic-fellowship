@@ -129,7 +129,7 @@ def compile_with_foundry(source_code: str, contract_name: str) -> tuple[bool, st
 
 def run_patch_pipeline():
     """Run patch generation and verification on test contracts."""
-    from benchmarks.bridge_contracts_v2 import ALL_CONTRACTS
+    from benchmarks.fixtures.bridge_contracts_v2 import ALL_CONTRACTS
 
     # Test on a subset of contracts
     test_contracts = ["NomadStyle", "WormholeStyle", "RoninStyle", "OracleManipulation"]

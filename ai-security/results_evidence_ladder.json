@@ -1,0 +1,25 @@
+{
+  "phase": 1,
+  "min_evidence_level": "static_corroboration",
+  "baseline": {
+    "precision": 0.45918367346938777,
+    "recall": 0.8490566037735849,
+    "f1": 0.5960264900662252,
+    "tp": 45,
+    "fp": 53,
+    "fn": 8
+  },
+  "evidence_gated": {
+    "precision": 0.85,
+    "recall": 0.32075471698113206,
+    "f1": 0.4657534246575342,
+    "tp": 17,
+    "fp": 3,
+    "fn": 36
+  },
+  "delta_f1": -0.130273065408691,
+  "delta_precision": 0.3908163265306122,
+  "delta_recall": -0.5283018867924529,
+  "recall_floor": 0.7989999999999999,
+  "abort": true
+}

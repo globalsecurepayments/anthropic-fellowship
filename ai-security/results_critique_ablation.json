@@ -1,0 +1,1175 @@
+{
+  "date": "2026-04-11",
+  "baseline": {
+    "results": [
+      {
+        "contract": "WormholeStyle",
+        "tp": 1,
+        "fp": 4,
+        "fn": 1,
+        "findings": [
+          "arbitrary_calldata",
+          "missing_signature_verification",
+          "missing_nonce",
+          "input_validation_missing",
+          "reentrancy"
+        ],
+        "gt": [
+          "untrusted_external_call",
+          "reentrancy"
+        ],
+        "matched": [
+          "reentrancy"
+        ],
+        "missed": [
+          "untrusted_external_call"
+        ],
+        "false_pos": [
+          "arbitrary_calldata",
+          "missing_signature_verification",
+          "missing_nonce",
+          "input_validation_missing"
+        ]
+      },
+      {
+        "contract": "NomadStyle",
+        "tp": 4,
+        "fp": 3,
+        "fn": 1,
+        "findings": [
+          "unprotected_initializer",
+          "zero_root_acceptance",
+          "missing_signature_verification",
+          "arbitrary_execution",
+          "no_rate_limiting",
+          "reinitializable",
+          "missing_event_emission"
+        ],
+        "gt": [
+          "unprotected_initializer",
+          "reinitializable",
+          "zero_root_acceptance",
+          "missing_signature_verification",
+          "missing_proof_link"
+        ],
+        "matched": [
+          "unprotected_initializer",
+          "reinitializable",
+          "zero_root_acceptance",
+          "missing_signature_verification"
+        ],
+        "missed": [
+          "missing_proof_link"
+        ],
+        "false_pos": [
+          "arbitrary_execution",
+          "no_rate_limiting",
+          "missing_event_emission"
+        ]
+      },
+      {
+        "contract": "RoninStyle",
+        "tp": 4,
+        "fp": 4,
+        "fn": 1,
+        "findings": [
+          "unprotected_admin_function",
+          "low_validator_threshold",
+          "duplicate_signature_acceptance",
+          "centralization_risk",
+          "signature_malleability",
+          "no_withdrawal_delay",
+          "missing_event_emission",
+          "input_validation_missing"
+        ],
+        "gt": [
+          "low_validator_threshold",
+          "duplicate_signature_acceptance",
+          "no_rate_limiting",
+          "unprotected_admin_function",
+          "no_withdrawal_delay"
+        ],
+        "matched": [
+          "low_validator_threshold",
+          "duplicate_signature_acceptance",
+          "unprotected_admin_function",
+          "no_withdrawal_delay"
+        ],
+        "missed": [
+          "no_rate_limiting"
+        ],
+        "false_pos": [
+          "centralization_risk",
+          "signature_malleability",
+          "missing_event_emission",
+          "input_validation_missing"
+        ]
+      },
+      {
+        "contract": "OracleManipulation",
+        "tp": 2,
+        "fp": 5,
+        "fn": 0,
+        "findings": [
+          "spot_price_oracle",
+          "flash_loan_exploitable",
+          "reentrancy",
+          "arbitrary_execution",
+          "input_validation_missing",
+          "centralization_risk",
+          "unchecked_transfer_return"
+        ],
+        "gt": [
+          "spot_price_oracle",
+          "flash_loan_exploitable"
+        ],
+        "matched": [
+          "spot_price_oracle",
+          "flash_loan_exploitable"
+        ],
+        "missed": [],
+        "false_pos": [
+          "reentrancy",
+          "arbitrary_execution",
+          "input_validation_missing",
+          "centralization_risk",
+          "unchecked_transfer_return"
+        ]
+      },
+      {
+        "contract": "LiFiStyle",
+        "tp": 2,
+        "fp": 3,
+        "fn": 0,
+        "findings": [
+          "arbitrary_calldata",
+          "approval_drain",
+          "input_validation_missing",
+          "unchecked_transfer_return",
+          "fee_on_transfer_mismatch"
+        ],
+        "gt": [
+          "arbitrary_external_call",
+          "approval_drain"
+        ],
+        "matched": [
+          "arbitrary_external_call",
+          "approval_drain"
+        ],
+        "missed": [],
+        "false_pos": [
+          "input_validation_missing",
+          "unchecked_transfer_return",
+          "fee_on_transfer_mismatch"
+        ]
+      },
+      {
+        "contract": "QubitStyle",
+        "tp": 2,
+        "fp": 1,
+        "fn": 0,
+        "findings": [
+          "zero_value_deposit",
+          "input_validation_missing",
+          "missing_event_emission"
+        ],
+        "gt": [
+          "zero_value_deposit",
+          "input_validation_missing"
+        ],
+        "matched": [
+          "zero_value_deposit",
+          "input_validation_missing"
+        ],
+        "missed": [],
+        "false_pos": [
+          "missing_event_emission"
+        ]
+      },
+      {
+        "contract": "HarmonyStyle",
+        "tp": 3,
+        "fp": 5,
+        "fn": 0,
+        "findings": [
+          "unprotected_admin_function",
+          "timelock_bypass",
+          "low_validator_threshold",
+          "cross_chain_replay",
+          "duplicate_signature_acceptance",
+          "signature_malleability",
+          "unbounded_loop_dos",
+          "centralization_risk"
+        ],
+        "gt": [
+          "low_validator_threshold",
+          "unprotected_admin_function",
+          "no_timelock"
+        ],
+        "matched": [
+          "low_validator_threshold",
+          "unprotected_admin_function",
+          "no_timelock"
+        ],
+        "missed": [],
+        "false_pos": [
+          "cross_chain_replay",
+          "duplicate_signature_acceptance",
+          "signature_malleability",
+          "unbounded_loop_dos",
+          "centralization_risk"
+        ]
+      },
+      {
+        "contract": "PolyNetworkStyle",
+        "tp": 1,
+        "fp": 4,
+        "fn": 2,
+        "findings": [
+          "arbitrary_calldata",
+          "missing_signature_verification",
+          "arbitrary_execution",
+          "unprotected_admin_function",
+          "missing_nonce"
+        ],
+        "gt": [
+          "unrestricted_cross_chain_call",
+          "arbitrary_execution",
+          "keeper_overwrite"
+        ],
+        "matched": [
+          "unrestricted_cross_chain_call"
+        ],
+        "missed": [
+          "arbitrary_execution",
+          "keeper_overwrite"
+        ],
+        "false_pos": [
+          "arbitrary_calldata",
+          "missing_signature_verification",
+          "unprotected_admin_function",
+          "missing_nonce"
+        ]
+      },
+      {
+        "contract": "BadProxyBridge",
+        "tp": 1,
+        "fp": 4,
+        "fn": 1,
+        "findings": [
+          "unprotected_upgrade",
+          "arbitrary_execution",
+          "centralization_risk",
+          "input_validation_missing",
+          "missing_event_emission"
+        ],
+        "gt": [
+          "unprotected_upgrade",
+          "delegatecall_to_untrusted"
+        ],
+        "matched": [
+          "unprotected_upgrade"
+        ],
+        "missed": [
+          "delegatecall_to_untrusted"
+        ],
+        "false_pos": [
+          "arbitrary_execution",
+          "centralization_risk",
+          "input_validation_missing",
+          "missing_event_emission"
+        ]
+      },
+      {
+        "contract": "ReplayBridge",
+        "tp": 2,
+        "fp": 4,
+        "fn": 0,
+        "findings": [
+          "cross_chain_replay",
+          "missing_signature_verification",
+          "arbitrary_execution",
+          "input_validation_missing",
+          "no_rate_limiting",
+          "zero_value_deposit"
+        ],
+        "gt": [
+          "cross_chain_replay",
+          "missing_signature_verification"
+        ],
+        "matched": [
+          "cross_chain_replay",
+          "missing_signature_verification"
+        ],
+        "missed": [],
+        "false_pos": [
+          "arbitrary_execution",
+          "input_validation_missing",
+          "no_rate_limiting",
+          "zero_value_deposit"
+        ]
+      },
+      {
+        "contract": "DelegateCallBridge",
+        "tp": 1,
+        "fp": 4,
+        "fn": 0,
+        "findings": [
+          "delegatecall_injection",
+          "arbitrary_execution",
+          "centralization_risk",
+          "forced_eth_reception",
+          "missing_event_emission"
+        ],
+        "gt": [
+          "delegatecall_to_user_input"
+        ],
+        "matched": [
+          "delegatecall_to_user_input"
+        ],
+        "missed": [],
+        "false_pos": [
+          "arbitrary_execution",
+          "centralization_risk",
+          "forced_eth_reception",
+          "missing_event_emission"
+        ]
+      },
+      {
+        "contract": "TimelockBypass",
+        "tp": 2,
+        "fp": 3,
+        "fn": 0,
+        "findings": [
+          "arbitrary_calldata",
+          "reentrancy",
+          "timelock_bypass",
+          "centralization_risk",
+          "input_validation_missing"
+        ],
+        "gt": [
+          "timelock_bypass",
+          "centralization_risk"
+        ],
+        "matched": [
+          "timelock_bypass",
+          "centralization_risk"
+        ],
+        "missed": [],
+        "false_pos": [
+          "arbitrary_calldata",
+          "reentrancy",
+          "input_validation_missing"
+        ]
+      },
+      {
+        "contract": "MalleableSig",
+        "tp": 2,
+        "fp": 3,
+        "fn": 0,
+        "findings": [
+          "signature_malleability",
+          "missing_nonce",
+          "cross_chain_replay",
+          "reentrancy",
+          "input_validation_missing"
+        ],
+        "gt": [
+          "signature_malleability",
+          "replay_via_sig_hash"
+        ],
+        "matched": [
+          "signature_malleability",
+          "replay_via_sig_hash"
+        ],
+        "missed": [],
+        "false_pos": [
+          "missing_nonce",
+          "reentrancy",
+          "input_validation_missing"
+        ]
+      },
+      {
+        "contract": "UncheckedTransfer",
+        "tp": 1,
+        "fp": 1,
+        "fn": 1,
+        "findings": [
+          "unchecked_transfer_return",
+          "reentrancy"
+        ],
+        "gt": [
+          "unchecked_transfer_return",
+          "unchecked_transfer_return"
+        ],
+        "matched": [
+          "unchecked_transfer_return"
+        ],
+        "missed": [
+          "unchecked_transfer_return"
+        ],
+        "false_pos": [
+          "reentrancy"
+        ]
+      },
+      {
+        "contract": "DoubleSpend",
+        "tp": 2,
+        "fp": 4,
+        "fn": 0,
+        "findings": [
+          "reentrancy",
+          "missing_signature_verification",
+          "double_spend",
+          "unprotected_admin_function",
+          "arbitrary_execution",
+          "input_validation_missing"
+        ],
+        "gt": [
+          "reentrancy",
+          "double_spend"
+        ],
+        "matched": [
+          "reentrancy",
+          "double_spend"
+        ],
+        "missed": [],
+        "false_pos": [
+          "missing_signature_verification",
+          "unprotected_admin_function",
+          "arbitrary_execution",
+          "input_validation_missing"
+        ]
+      },
+      {
+        "contract": "GasBomb",
+        "tp": 1,
+        "fp": 5,
+        "fn": 1,
+        "findings": [
+          "missing_signature_verification",
+          "unprotected_admin_function",
+          "unbounded_loop_dos",
+          "arbitrary_execution",
+          "no_withdrawal_delay",
+          "centralization_risk"
+        ],
+        "gt": [
+          "unbounded_loop_dos",
+          "unprotected_push"
+        ],
+        "matched": [
+          "unbounded_loop_dos"
+        ],
+        "missed": [
+          "unprotected_push"
+        ],
+        "false_pos": [
+          "missing_signature_verification",
+          "unprotected_admin_function",
+          "arbitrary_execution",
+          "no_withdrawal_delay",
+          "centralization_risk"
+        ]
+      },
+      {
+        "contract": "SelfDestruct",
+        "tp": 1,
+        "fp": 2,
+        "fn": 0,
+        "findings": [
+          "forced_eth_reception",
+          "reentrancy",
+          "zero_value_deposit"
+        ],
+        "gt": [
+          "forced_eth_reception"
+        ],
+        "matched": [
+          "forced_eth_reception"
+        ],
+        "missed": [],
+        "false_pos": [
+          "reentrancy",
+          "zero_value_deposit"
+        ]
+      },
+      {
+        "contract": "FrontRun",
+        "tp": 1,
+        "fp": 3,
+        "fn": 0,
+        "findings": [
+          "missing_signature_verification",
+          "input_validation_missing",
+          "input_validation_missing",
+          "front_running"
+        ],
+        "gt": [
+          "front_running"
+        ],
+        "matched": [
+          "front_running"
+        ],
+        "missed": [],
+        "false_pos": [
+          "missing_signature_verification",
+          "input_validation_missing",
+          "input_validation_missing"
+        ]
+      },
+      {
+        "contract": "MissingEvents",
+        "tp": 1,
+        "fp": 3,
+        "fn": 1,
+        "findings": [
+          "missing_event_emission",
+          "missing_event_emission",
+          "centralization_risk",
+          "input_validation_missing"
+        ],
+        "gt": [
+          "missing_event_emission",
+          "unbounded_fee"
+        ],
+        "matched": [
+          "missing_event_emission"
+        ],
+        "missed": [
+          "unbounded_fee"
+        ],
+        "false_pos": [
+          "missing_event_emission",
+          "centralization_risk",
+          "input_validation_missing"
+        ]
+      },
+      {
+        "contract": "FeeOnTransfer",
+        "tp": 1,
+        "fp": 3,
+        "fn": 0,
+        "findings": [
+          "fee_on_transfer_mismatch",
+          "unchecked_transfer_return",
+          "reentrancy",
+          "input_validation_missing"
+        ],
+        "gt": [
+          "fee_on_transfer_mismatch"
+        ],
+        "matched": [
+          "fee_on_transfer_mismatch"
+        ],
+        "missed": [],
+        "false_pos": [
+          "unchecked_transfer_return",
+          "reentrancy",
+          "input_validation_missing"
+        ]
+      },
+      {
+        "contract": "DriftStyle",
+        "tp": 4,
+        "fp": 6,
+        "fn": 1,
+        "findings": [
+          "missing_signature_verification",
+          "unprotected_admin_function",
+          "reentrancy",
+          "spot_price_oracle",
+          "timelock_bypass",
+          "low_validator_threshold",
+          "missing_nonce",
+          "input_validation_missing",
+          "centralization_risk",
+          "cross_chain_replay"
+        ],
+        "gt": [
+          "low_multisig_threshold",
+          "zero_timelock",
+          "oracle_manipulation_fake_token",
+          "unprotected_admin_function",
+          "no_rate_limiting"
+        ],
+        "matched": [
+          "low_multisig_threshold",
+          "zero_timelock",
+          "oracle_manipulation_fake_token",
+          "unprotected_admin_function"
+        ],
+        "missed": [
+          "no_rate_limiting"
+        ],
+        "false_pos": [
+          "missing_signature_verification",
+          "reentrancy",
+          "missing_nonce",
+          "input_validation_missing",
+          "centralization_risk",
+          "cross_chain_replay"
+        ]
+      },
+      {
+        "contract": "CCTPStyle",
+        "tp": 3,
+        "fp": 5,
+        "fn": 1,
+        "findings": [
+          "missing_nonce",
+          "no_rate_limiting",
+          "low_validator_threshold",
+          "arbitrary_calldata",
+          "no_withdrawal_delay",
+          "signature_malleability",
+          "unchecked_transfer_return",
+          "centralization_risk"
+        ],
+        "gt": [
+          "no_rate_limiting",
+          "centralization_risk",
+          "no_amount_sanity_check",
+          "zero_timelock"
+        ],
+        "matched": [
+          "no_rate_limiting",
+          "centralization_risk",
+          "zero_timelock"
+        ],
+        "missed": [
+          "no_amount_sanity_check"
+        ],
+        "false_pos": [
+          "missing_nonce",
+          "low_validator_threshold",
+          "arbitrary_calldata",
+          "signature_malleability",
+          "unchecked_transfer_return"
+        ]
+      }
+    ],
+    "precision": 0.34710743801652894,
+    "recall": 0.7924528301886793,
+    "f1": 0.48275862068965525,
+    "tp": 42,
+    "fp": 79,
+    "fn": 11
+  },
+  "with_critique": {
+    "results": [
+      {
+        "contract": "WormholeStyle",
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "findings": [],
+        "gt": [
+          "untrusted_external_call",
+          "reentrancy"
+        ],
+        "matched": [],
+        "missed": [
+          "untrusted_external_call",
+          "reentrancy"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "NomadStyle",
+        "tp": 0,
+        "fp": 0,
+        "fn": 5,
+        "findings": [],
+        "gt": [
+          "unprotected_initializer",
+          "reinitializable",
+          "zero_root_acceptance",
+          "missing_signature_verification",
+          "missing_proof_link"
+        ],
+        "matched": [],
+        "missed": [
+          "unprotected_initializer",
+          "reinitializable",
+          "zero_root_acceptance",
+          "missing_signature_verification",
+          "missing_proof_link"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "RoninStyle",
+        "tp": 3,
+        "fp": 7,
+        "fn": 2,
+        "findings": [
+          "unprotected_admin_function",
+          "cross_chain_replay",
+          "duplicate_signature_acceptance",
+          "signature_malleability",
+          "reentrancy",
+          "input_validation_missing",
+          "missing_nonce",
+          "low_validator_threshold",
+          "missing_signature_verification",
+          "arbitrary_execution"
+        ],
+        "gt": [
+          "low_validator_threshold",
+          "duplicate_signature_acceptance",
+          "no_rate_limiting",
+          "unprotected_admin_function",
+          "no_withdrawal_delay"
+        ],
+        "matched": [
+          "low_validator_threshold",
+          "duplicate_signature_acceptance",
+          "unprotected_admin_function"
+        ],
+        "missed": [
+          "no_rate_limiting",
+          "no_withdrawal_delay"
+        ],
+        "false_pos": [
+          "cross_chain_replay",
+          "signature_malleability",
+          "reentrancy",
+          "input_validation_missing",
+          "missing_nonce",
+          "missing_signature_verification",
+          "arbitrary_execution"
+        ]
+      },
+      {
+        "contract": "OracleManipulation",
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "findings": [],
+        "gt": [
+          "spot_price_oracle",
+          "flash_loan_exploitable"
+        ],
+        "matched": [],
+        "missed": [
+          "spot_price_oracle",
+          "flash_loan_exploitable"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "LiFiStyle",
+        "tp": 1,
+        "fp": 4,
+        "fn": 1,
+        "findings": [
+          "arbitrary_calldata",
+          "input_validation_missing",
+          "input_validation_missing",
+          "unchecked_transfer_return",
+          "zero_value_deposit"
+        ],
+        "gt": [
+          "arbitrary_external_call",
+          "approval_drain"
+        ],
+        "matched": [
+          "arbitrary_external_call"
+        ],
+        "missed": [
+          "approval_drain"
+        ],
+        "false_pos": [
+          "input_validation_missing",
+          "input_validation_missing",
+          "unchecked_transfer_return",
+          "zero_value_deposit"
+        ]
+      },
+      {
+        "contract": "QubitStyle",
+        "tp": 1,
+        "fp": 2,
+        "fn": 1,
+        "findings": [
+          "input_validation_missing",
+          "reentrancy",
+          "input_validation_missing"
+        ],
+        "gt": [
+          "zero_value_deposit",
+          "input_validation_missing"
+        ],
+        "matched": [
+          "input_validation_missing"
+        ],
+        "missed": [
+          "zero_value_deposit"
+        ],
+        "false_pos": [
+          "reentrancy",
+          "input_validation_missing"
+        ]
+      },
+      {
+        "contract": "HarmonyStyle",
+        "tp": 0,
+        "fp": 0,
+        "fn": 3,
+        "findings": [],
+        "gt": [
+          "low_validator_threshold",
+          "unprotected_admin_function",
+          "no_timelock"
+        ],
+        "matched": [],
+        "missed": [
+          "low_validator_threshold",
+          "unprotected_admin_function",
+          "no_timelock"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "PolyNetworkStyle",
+        "tp": 1,
+        "fp": 6,
+        "fn": 2,
+        "findings": [
+          "arbitrary_calldata",
+          "unprotected_admin_function",
+          "missing_signature_verification",
+          "arbitrary_execution",
+          "cross_chain_replay",
+          "input_validation_missing",
+          "missing_nonce"
+        ],
+        "gt": [
+          "unrestricted_cross_chain_call",
+          "arbitrary_execution",
+          "keeper_overwrite"
+        ],
+        "matched": [
+          "unrestricted_cross_chain_call"
+        ],
+        "missed": [
+          "arbitrary_execution",
+          "keeper_overwrite"
+        ],
+        "false_pos": [
+          "arbitrary_calldata",
+          "unprotected_admin_function",
+          "missing_signature_verification",
+          "cross_chain_replay",
+          "input_validation_missing",
+          "missing_nonce"
+        ]
+      },
+      {
+        "contract": "BadProxyBridge",
+        "tp": 0,
+        "fp": 5,
+        "fn": 2,
+        "findings": [
+          "ACCESS_CONTROL",
+          "ARBITRARY_CALLS",
+          "INPUT_VALIDATION",
+          "REENTRANCY",
+          "INPUT_VALIDATION"
+        ],
+        "gt": [
+          "unprotected_upgrade",
+          "delegatecall_to_untrusted"
+        ],
+        "matched": [],
+        "missed": [
+          "unprotected_upgrade",
+          "delegatecall_to_untrusted"
+        ],
+        "false_pos": [
+          "ACCESS_CONTROL",
+          "ARBITRARY_CALLS",
+          "INPUT_VALIDATION",
+          "REENTRANCY",
+          "INPUT_VALIDATION"
+        ]
+      },
+      {
+        "contract": "ReplayBridge",
+        "tp": 2,
+        "fp": 3,
+        "fn": 0,
+        "findings": [
+          "missing_signature_verification",
+          "cross_chain_replay",
+          "missing_proof_link",
+          "arbitrary_calldata",
+          "input_validation_missing"
+        ],
+        "gt": [
+          "cross_chain_replay",
+          "missing_signature_verification"
+        ],
+        "matched": [
+          "cross_chain_replay",
+          "missing_signature_verification"
+        ],
+        "missed": [],
+        "false_pos": [
+          "missing_proof_link",
+          "arbitrary_calldata",
+          "input_validation_missing"
+        ]
+      },
+      {
+        "contract": "DelegateCallBridge",
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "findings": [],
+        "gt": [
+          "delegatecall_to_user_input"
+        ],
+        "matched": [],
+        "missed": [
+          "delegatecall_to_user_input"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "TimelockBypass",
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "findings": [],
+        "gt": [
+          "timelock_bypass",
+          "centralization_risk"
+        ],
+        "matched": [],
+        "missed": [
+          "timelock_bypass",
+          "centralization_risk"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "MalleableSig",
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "findings": [],
+        "gt": [
+          "signature_malleability",
+          "replay_via_sig_hash"
+        ],
+        "matched": [],
+        "missed": [
+          "signature_malleability",
+          "replay_via_sig_hash"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "UncheckedTransfer",
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "findings": [],
+        "gt": [
+          "unchecked_transfer_return",
+          "unchecked_transfer_return"
+        ],
+        "matched": [],
+        "missed": [
+          "unchecked_transfer_return",
+          "unchecked_transfer_return"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "DoubleSpend",
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "findings": [],
+        "gt": [
+          "reentrancy",
+          "double_spend"
+        ],
+        "matched": [],
+        "missed": [
+          "reentrancy",
+          "double_spend"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "GasBomb",
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "findings": [],
+        "gt": [
+          "unbounded_loop_dos",
+          "unprotected_push"
+        ],
+        "matched": [],
+        "missed": [
+          "unbounded_loop_dos",
+          "unprotected_push"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "SelfDestruct",
+        "tp": 1,
+        "fp": 2,
+        "fn": 0,
+        "findings": [
+          "forced_eth_reception",
+          "no_rate_limiting",
+          "missing_event_emission"
+        ],
+        "gt": [
+          "forced_eth_reception"
+        ],
+        "matched": [
+          "forced_eth_reception"
+        ],
+        "missed": [],
+        "false_pos": [
+          "no_rate_limiting",
+          "missing_event_emission"
+        ]
+      },
+      {
+        "contract": "FrontRun",
+        "tp": 0,
+        "fp": 4,
+        "fn": 1,
+        "findings": [
+          "ARBITRARY_CALLS",
+          "REENTRANCY",
+          "INPUT VALIDATION",
+          "REPLAY"
+        ],
+        "gt": [
+          "front_running"
+        ],
+        "matched": [],
+        "missed": [
+          "front_running"
+        ],
+        "false_pos": [
+          "ARBITRARY_CALLS",
+          "REENTRANCY",
+          "INPUT VALIDATION",
+          "REPLAY"
+        ]
+      },
+      {
+        "contract": "MissingEvents",
+        "tp": 0,
+        "fp": 0,
+        "fn": 2,
+        "findings": [],
+        "gt": [
+          "missing_event_emission",
+          "unbounded_fee"
+        ],
+        "matched": [],
+        "missed": [
+          "missing_event_emission",
+          "unbounded_fee"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "FeeOnTransfer",
+        "tp": 0,
+        "fp": 0,
+        "fn": 1,
+        "findings": [],
+        "gt": [
+          "fee_on_transfer_mismatch"
+        ],
+        "matched": [],
+        "missed": [
+          "fee_on_transfer_mismatch"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "DriftStyle",
+        "tp": 0,
+        "fp": 0,
+        "fn": 5,
+        "findings": [],
+        "gt": [
+          "low_multisig_threshold",
+          "zero_timelock",
+          "oracle_manipulation_fake_token",
+          "unprotected_admin_function",
+          "no_rate_limiting"
+        ],
+        "matched": [],
+        "missed": [
+          "low_multisig_threshold",
+          "zero_timelock",
+          "oracle_manipulation_fake_token",
+          "unprotected_admin_function",
+          "no_rate_limiting"
+        ],
+        "false_pos": []
+      },
+      {
+        "contract": "CCTPStyle",
+        "tp": 1,
+        "fp": 4,
+        "fn": 3,
+        "findings": [
+          "signature_malleability",
+          "unprotected_admin_function",
+          "centralization_risk",
+          "input_validation_missing",
+          "unchecked_call_return_value"
+        ],
+        "gt": [
+          "no_rate_limiting",
+          "centralization_risk",
+          "no_amount_sanity_check",
+          "zero_timelock"
+        ],
+        "matched": [
+          "centralization_risk"
+        ],
+        "missed": [
+          "no_rate_limiting",
+          "no_amount_sanity_check",
+          "zero_timelock"
+        ],
+        "false_pos": [
+          "signature_malleability",
+          "unprotected_admin_function",
+          "input_validation_missing",
+          "unchecked_call_return_value"
+        ]
+      }
+    ],
+    "precision": 0.2127659574468085,
+    "recall": 0.18867924528301888,
+    "f1": 0.2,
+    "tp": 10,
+    "fp": 37,
+    "fn": 43
+  },
+  "delta_f1": -0.28275862068965524,
+  "provenance": {
+    "source_pattern": "MultiMind-AI Thinking Pipeline (hard mode)",
+    "pattern_license": "author-direct learning grant 2026-04-11 (JitseLambrichts)",
+    "plan_source": "~/Annunaki/Agent Vault/plans/bridge-bench-plan-execute-critique-ablation.md",
+    "decision": "~/Annunaki/Agent Vault/decisions/Adopt batch 2026-04-11.md"
+  }
+}

@@ -27,7 +27,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from benchmarks.bridge_bench import BRIDGE_EXPLOITS, BridgeExploit, DetectionMode
+from benchmarks.fixtures.bridge_bench import BRIDGE_EXPLOITS, BridgeExploit, DetectionMode
 
 
 @dataclass
@@ -308,7 +308,7 @@ if __name__ == "__main__":
     print(f"Etherscan API key: {'set' if os.environ.get('ETHERSCAN_API_KEY') else 'not set'}")
     print()
 
-    from benchmarks.bridge_bench import get_stats
+    from benchmarks.fixtures.bridge_bench import get_stats
     stats = get_stats()
     print(f"LLM-detectable exploits: {stats['by_detection'].get('llm_reasoning', {}).get('count', 0) + stats['by_detection'].get('static_source', {}).get('count', 0)}")
     print(f"LLM-detectable losses: ${stats['llm_detectable_loss']:,.0f}")
