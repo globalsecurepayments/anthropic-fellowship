@@ -14,6 +14,16 @@ from __future__ import annotations
 import os
 from typing import Optional
 
+# Defense-in-depth telemetry opt-out — set BEFORE importing deepeval.
+# DeepEval fires PostHog + Sentry at import time. Layer 1 is per-consumer
+# .env / .env.example; Layer 2 is ~/.zshenv shell export. This is Layer 3,
+# applied unconditionally on judge-factory import so any caller of
+# make_judge() gets the opt-out even if shell env is unset (CI, Docker w/o
+# the env injected, ad-hoc REPL imports of this module). setdefault never
+# overrides an explicit override (e.g., if a future test deliberately wants
+# telemetry on, env wins). See decisions/Adopt deepeval 2026-04-27.md.
+os.environ.setdefault("DEEPEVAL_TELEMETRY_OPT_OUT", "true")
+
 from deepeval.models import DeepEvalBaseLLM
 from deepeval.models.llms.litellm_model import LiteLLMModel
 
