@@ -23,11 +23,19 @@
 # enough to prevent regression without forcing immediate refactor.
 max_cc = 25
 
-# Function-length ceiling — set to 200 so the 5 currently-long functions
-# (agentic_analyzer.run_agent 174, evidence_benchmark.run_evidence_benchmark
-# 168, run_apo.async_main 197, ingest_runs.main 168, Config.t.sol::test_writeConfig
-# 121) pass on day 1. Ratchet target: drop to 150 once analyzers are split.
-max_fn_lines = 200
+# Function-length ceiling — ratcheted from 200 → 150 in CR #755 follow-up
+# after extracting helpers from the 4 long Python functions:
+#   apo/run_apo.py:async_main 197 → 143 (extracted _build_apo_algo,
+#     _build_optimized_analyzer module-level helpers)
+#   agents/agentic_analyzer.py:run_agent 174 → 141 (extracted
+#     _process_tool_call dispatch shared between Bifrost + Anthropic loops)
+#   graphiti_prototype/ingest_runs.py:main 168 → 148 (extracted
+#     _create_fts_indices Kuzu-driver patch helper)
+#   agents/evidence_benchmark.py:run_evidence_benchmark 168 → 142
+#     (extracted _findings_from_tagged_dicts, _aggregate_metrics)
+# foundry/lib/forge-std test_writeConfig 121 lines passes 150 trivially —
+# vendored third-party test, not ours to refactor.
+max_fn_lines = 150
 
 # Zero tolerance on circular imports — already 0 in baseline; keep it there.
 max_cycles = 0

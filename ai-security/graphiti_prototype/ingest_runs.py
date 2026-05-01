@@ -111,6 +111,37 @@ def build_episode_body(filepath: Path, description: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Setup helpers
+# ---------------------------------------------------------------------------
+
+def _create_fts_indices(kuzu_driver):
+    """Create FTS indices that the Kuzu driver's setup_schema() skips.
+
+    These are defined in graphiti_core/graph_queries.py but never called by
+    KuzuDriver.build_indices_and_constraints() (no-op). Without these,
+    entity resolution during add_episode() crashes. Idempotent — silently
+    skips indices that already exist.
+    """
+    import kuzu
+    conn = kuzu.Connection(kuzu_driver.db)
+    fts_queries = [
+        "CALL CREATE_FTS_INDEX('Episodic', 'episode_content', ['content', 'source', 'source_description']);",
+        "CALL CREATE_FTS_INDEX('Entity', 'node_name_and_summary', ['name', 'summary']);",
+        "CALL CREATE_FTS_INDEX('Community', 'community_name', ['name']);",
+        "CALL CREATE_FTS_INDEX('RelatesToNode_', 'edge_name_and_fact', ['name', 'fact']);",
+    ]
+    for q in fts_queries:
+        try:
+            conn.execute(q)
+        except RuntimeError as e:
+            if "already exists" in str(e):
+                pass  # Idempotent
+            else:
+                raise
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -171,27 +202,7 @@ async def main():
         t0 = time.time()
         await graphiti.build_indices_and_constraints()
 
-        # PATCH: Create FTS indices that the Kuzu driver's setup_schema()
-        # skips. These are defined in graphiti_core/graph_queries.py but
-        # never called by KuzuDriver.build_indices_and_constraints() (no-op).
-        # Without these, entity resolution during add_episode() crashes.
-        import kuzu
-        conn = kuzu.Connection(kuzu_driver.db)
-        fts_queries = [
-            "CALL CREATE_FTS_INDEX('Episodic', 'episode_content', ['content', 'source', 'source_description']);",
-            "CALL CREATE_FTS_INDEX('Entity', 'node_name_and_summary', ['name', 'summary']);",
-            "CALL CREATE_FTS_INDEX('Community', 'community_name', ['name']);",
-            "CALL CREATE_FTS_INDEX('RelatesToNode_', 'edge_name_and_fact', ['name', 'fact']);",
-        ]
-        for q in fts_queries:
-            try:
-                conn.execute(q)
-            except RuntimeError as e:
-                if "already exists" in str(e):
-                    pass  # Idempotent
-                else:
-                    raise
-        conn.close()
+        _create_fts_indices(kuzu_driver)
         print(f"  Schema + FTS indices built in {time.time() - t0:.2f}s")
 
         # --- Ingest episodes ---

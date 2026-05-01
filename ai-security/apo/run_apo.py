@@ -83,6 +83,80 @@ async def run_runner(store: agl.LightningStore, tracer: agl.Tracer) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Setup helpers (extracted for readability + max_fn_lines compliance)
+# ---------------------------------------------------------------------------
+
+def _build_apo_algo(apo_client, store, seed):
+    """Build the APO algorithm with the project's standard hyperparameters
+    and wire store + trace adapter. Returns (algo, adapter) — the caller
+    MUST keep a strong reference to `adapter` because algo stores it as
+    a weakref internally."""
+    algo = APO[BridgeBenchTask](
+        apo_client,
+        gradient_model=APO_GRADIENT_MODEL,
+        apply_edit_model=APO_EDIT_MODEL,
+        val_batch_size=6,
+        gradient_batch_size=4,
+        beam_width=2,
+        branch_factor=2,
+        beam_rounds=3,
+        _poml_trace=True,
+    )
+    adapter = TraceToMessages()
+    algo.set_store(store)
+    algo.set_adapter(adapter)
+    algo.set_initial_resources({"prompt_template": seed})
+    return algo, adapter
+
+
+def _build_optimized_analyzer(system_prompt: str, client, model: str):
+    """Build a per-contract analyzer that uses the optimized system prompt
+    against the regression gate (Gate 5). Returned closure matches the
+    analyzer signature expected by run_regression_gate."""
+    from agents.parse_utils import parse_llm_findings
+    from dataclasses import dataclass
+
+    @dataclass
+    class Finding:
+        vuln_type: str
+        severity: str = "medium"
+        location: str = "unknown"
+        description: str = ""
+        confidence: float = 0.5
+
+    def analyze(source: str, contract_name: str = "Unknown") -> list:
+        try:
+            resp = client.chat.completions.create(
+                model=model, max_tokens=4096, temperature=0.0,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": (
+                        f"Contract name: {contract_name}\n\n"
+                        f"Analyze this Solidity smart contract for security vulnerabilities:\n\n"
+                        f"```solidity\n{source}\n```\n\nProvide your analysis as JSON."
+                    )},
+                ],
+            )
+            text = resp.choices[0].message.content if resp.choices else ""
+            findings = parse_llm_findings(text or "")
+        except Exception as e:
+            print(f"  [Gate error on {contract_name}]: {e}")
+            findings = []
+        return [
+            Finding(
+                vuln_type=f.get("type", f.get("vuln_type", "unknown")),
+                severity=f.get("severity", "medium"),
+                location=f.get("location", "unknown"),
+                description=f.get("description", ""),
+                confidence=f.get("confidence", 0.5),
+            )
+            for f in findings
+        ]
+
+    return analyze
+
+
+# ---------------------------------------------------------------------------
 # Main async entrypoint
 # ---------------------------------------------------------------------------
 
@@ -132,24 +206,8 @@ async def async_main() -> None:
 
     # ── APO algorithm ──────────────────────────────────────────
     apo_client = AsyncOpenAI(base_url=BIFROST_URL, api_key=BIFROST_KEY)
-    algo = APO[BridgeBenchTask](
-        apo_client,
-        gradient_model=APO_GRADIENT_MODEL,
-        apply_edit_model=APO_EDIT_MODEL,
-        val_batch_size=6,
-        gradient_batch_size=4,
-        beam_width=2,
-        branch_factor=2,
-        beam_rounds=3,
-        _poml_trace=True,
-    )
-
-    # Wire the store and adapter into the algorithm.
-    # CRITICAL: keep strong references — algo stores weakrefs internally.
-    adapter = TraceToMessages()  # Must persist — algo uses weakref
-    algo.set_store(store)
-    algo.set_adapter(adapter)
-    algo.set_initial_resources({"prompt_template": seed})
+    # CRITICAL: keep strong reference to `adapter` — algo stores weakrefs.
+    algo, adapter = _build_apo_algo(apo_client, store, seed)
 
     print(f"\n--- Starting APO optimization ---")
     print(f"  Model: {BIFROST_MODEL}")
@@ -204,47 +262,9 @@ async def async_main() -> None:
 
     from openai import OpenAI as SyncOpenAI
     _gate_client = SyncOpenAI(base_url=BIFROST_URL, api_key=BIFROST_KEY)
-
-    def optimized_analyzer(source: str, contract_name: str = "Unknown") -> list:
-        from agents.parse_utils import parse_llm_findings
-        from dataclasses import dataclass
-
-        @dataclass
-        class Finding:
-            vuln_type: str
-            severity: str = "medium"
-            location: str = "unknown"
-            description: str = ""
-            confidence: float = 0.5
-
-        try:
-            resp = _gate_client.chat.completions.create(
-                model=BIFROST_MODEL, max_tokens=4096, temperature=0.0,
-                messages=[
-                    {"role": "system", "content": optimized_system_prompt},
-                    {"role": "user", "content": (
-                        f"Contract name: {contract_name}\n\n"
-                        f"Analyze this Solidity smart contract for security vulnerabilities:\n\n"
-                        f"```solidity\n{source}\n```\n\nProvide your analysis as JSON."
-                    )},
-                ],
-            )
-            text = resp.choices[0].message.content if resp.choices else ""
-            findings = parse_llm_findings(text or "")
-        except Exception as e:
-            print(f"  [Gate error on {contract_name}]: {e}")
-            findings = []
-
-        return [
-            Finding(
-                vuln_type=f.get("type", f.get("vuln_type", "unknown")),
-                severity=f.get("severity", "medium"),
-                location=f.get("location", "unknown"),
-                description=f.get("description", ""),
-                confidence=f.get("confidence", 0.5),
-            )
-            for f in findings
-        ]
+    optimized_analyzer = _build_optimized_analyzer(
+        optimized_system_prompt, _gate_client, BIFROST_MODEL,
+    )
 
     gate_result = run_regression_gate(
         optimized_analyzer, label="APO-optimized prompt", verbose=True,

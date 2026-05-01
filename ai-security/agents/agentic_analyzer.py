@@ -302,6 +302,25 @@ def _run_vuln_check(check_type: str, source: str) -> str:
     return f"Unknown check type: {check_type}"
 
 
+def _process_tool_call(tool_name, tool_input, source_code, audit):
+    """Process one tool call: either record a finding (submit_finding) or
+    dispatch to handle_tool_call. Returns the result string for the LLM.
+    Shared between the Bifrost and native-Anthropic loops in run_agent."""
+    if tool_name == "submit_finding":
+        finding = AgentFinding(
+            vuln_type=tool_input.get("vuln_type", "unknown"),
+            severity=tool_input.get("severity", "medium"),
+            location=tool_input.get("location", "unknown"),
+            description=tool_input.get("description", ""),
+            exploit_scenario=tool_input.get("exploit_scenario", ""),
+            suggested_fix=tool_input.get("suggested_fix", ""),
+            confidence=tool_input.get("confidence", 0.5),
+        )
+        audit.findings.append(finding)
+        return f"Finding #{len(audit.findings)} recorded: {finding.vuln_type} ({finding.severity})"
+    return handle_tool_call(tool_name, tool_input, source_code)
+
+
 def run_agent(
     source_code: str,
     contract_name: str,
@@ -384,24 +403,8 @@ Be thorough — check all vulnerability categories."""
             # Process tool calls
             for tc in msg.tool_calls:
                 audit.tool_calls_made += 1
-                tool_name = tc.function.name
                 tool_input = json.loads(tc.function.arguments)
-
-                if tool_name == "submit_finding":
-                    finding = AgentFinding(
-                        vuln_type=tool_input.get("vuln_type", "unknown"),
-                        severity=tool_input.get("severity", "medium"),
-                        location=tool_input.get("location", "unknown"),
-                        description=tool_input.get("description", ""),
-                        exploit_scenario=tool_input.get("exploit_scenario", ""),
-                        suggested_fix=tool_input.get("suggested_fix", ""),
-                        confidence=tool_input.get("confidence", 0.5),
-                    )
-                    audit.findings.append(finding)
-                    result = f"Finding #{len(audit.findings)} recorded: {finding.vuln_type} ({finding.severity})"
-                else:
-                    result = handle_tool_call(tool_name, tool_input, source_code)
-
+                result = _process_tool_call(tc.function.name, tool_input, source_code, audit)
                 messages.append({
                     "role": "tool",
                     "tool_call_id": tc.id,
@@ -445,24 +448,7 @@ Be thorough — check all vulnerability categories."""
             for block in assistant_content:
                 if block.type == "tool_use":
                     audit.tool_calls_made += 1
-                    tool_name = block.name
-                    tool_input = block.input
-
-                    if tool_name == "submit_finding":
-                        finding = AgentFinding(
-                            vuln_type=tool_input.get("vuln_type", "unknown"),
-                            severity=tool_input.get("severity", "medium"),
-                            location=tool_input.get("location", "unknown"),
-                            description=tool_input.get("description", ""),
-                            exploit_scenario=tool_input.get("exploit_scenario", ""),
-                            suggested_fix=tool_input.get("suggested_fix", ""),
-                            confidence=tool_input.get("confidence", 0.5),
-                        )
-                        audit.findings.append(finding)
-                        result = f"Finding #{len(audit.findings)} recorded: {finding.vuln_type} ({finding.severity})"
-                    else:
-                        result = handle_tool_call(tool_name, tool_input, source_code)
-
+                    result = _process_tool_call(block.name, block.input, source_code, audit)
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": block.id,

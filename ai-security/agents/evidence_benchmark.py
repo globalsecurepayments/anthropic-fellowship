@@ -108,6 +108,31 @@ def analyze_with_evidence_gate(
 # Benchmark runner
 # ---------------------------------------------------------------------------
 
+def _findings_from_tagged_dicts(tagged_dicts):
+    """Reconstruct AgentV2Finding objects from tagged dicts. Used twice
+    in run_evidence_benchmark (baseline vs reporting-gated)."""
+    return [
+        AgentV2Finding(
+            vuln_type=f["vuln_type"], severity=f["severity"],
+            location=f["location"], description=f["description"],
+            exploit_scenario=f.get("exploit_scenario", ""),
+            confidence=f.get("confidence", 0.5),
+        )
+        for f in tagged_dicts
+    ]
+
+
+def _aggregate_metrics(results):
+    """Sum TP/FP/FN across per-contract results and derive precision/recall/F1."""
+    tp = sum(r["tp"] for r in results)
+    fp = sum(r["fp"] for r in results)
+    fn = sum(r["fn"] for r in results)
+    p = tp / (tp + fp) if (tp + fp) > 0 else 0
+    r = tp / (tp + fn) if (tp + fn) > 0 else 0
+    f1 = 2 * p * r / (p + r) if (p + r) > 0 else 0
+    return {"precision": p, "recall": r, "f1": f1, "tp": tp, "fp": fp, "fn": fn}
+
+
 def run_evidence_benchmark():
     """Single-run evidence tagging: run LLM once, compare ALL vs GATED findings.
 
@@ -166,27 +191,11 @@ def run_evidence_benchmark():
                 total_corroborated += 1
 
         # Baseline: ALL findings (ungated)
-        baseline_findings = [
-            AgentV2Finding(
-                vuln_type=f["vuln_type"], severity=f["severity"],
-                location=f["location"], description=f["description"],
-                exploit_scenario=f.get("exploit_scenario", ""),
-                confidence=f.get("confidence", 0.5),
-            )
-            for f in tagged
-        ]
+        baseline_findings = _findings_from_tagged_dicts(tagged)
 
         # Gated: only findings passing the evidence threshold
         reported, below = apply_reporting_gate(tagged)
-        gated_findings = [
-            AgentV2Finding(
-                vuln_type=f["vuln_type"], severity=f["severity"],
-                location=f["location"], description=f["description"],
-                exploit_scenario=f.get("exploit_scenario", ""),
-                confidence=f.get("confidence", 0.5),
-            )
-            for f in reported
-        ]
+        gated_findings = _findings_from_tagged_dicts(reported)
 
         # Evaluate both against ground truth
         b_result = evaluate_contract(name, source, gt, lambda s, n=None: baseline_findings)
@@ -204,18 +213,8 @@ def run_evidence_benchmark():
     print(f"\n  Evidence level distribution: "
           f"{total_suspicion} suspicion, {total_corroborated} corroborated")
 
-    # Compute aggregate metrics
-    def aggregate(results):
-        tp = sum(r["tp"] for r in results)
-        fp = sum(r["fp"] for r in results)
-        fn = sum(r["fn"] for r in results)
-        p = tp / (tp + fp) if (tp + fp) > 0 else 0
-        r = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * p * r / (p + r) if (p + r) > 0 else 0
-        return {"precision": p, "recall": r, "f1": f1, "tp": tp, "fp": fp, "fn": fn}
-
-    baseline_metrics = aggregate(baseline_results)
-    gated_metrics = aggregate(gated_results)
+    baseline_metrics = _aggregate_metrics(baseline_results)
+    gated_metrics = _aggregate_metrics(gated_results)
 
     # --- Comparison ---
     print("\n" + "=" * 70)
