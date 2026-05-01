@@ -21,7 +21,7 @@ from copy import deepcopy
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from benchmarks.bridge_contracts_v2 import ALL_CONTRACTS
+from benchmarks.fixtures.bridge_contracts_v2 import ALL_CONTRACTS
 
 
 # ── Variant 1: Partially-fixed contracts ──────────────────────────────

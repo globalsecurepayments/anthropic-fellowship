@@ -270,7 +270,7 @@ if __name__ == "__main__":
     else:
         import sys
         sys.path.insert(0, str(Path(__file__).parent.parent))
-        from benchmarks.test_contracts import TEST_CONTRACTS
+        from benchmarks.fixtures.test_contracts import TEST_CONTRACTS
 
         for name, data in list(TEST_CONTRACTS.items())[:2]:
             print(f"\n{'='*50}")

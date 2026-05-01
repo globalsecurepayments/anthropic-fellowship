@@ -238,7 +238,7 @@ def analyze_with_agent_v2_critique(
 
 def run_critique_benchmark():
     """Head-to-head: baseline Agent v2 vs Plan-Execute-Critique wrapper."""
-    from benchmarks.bridge_contracts_v2 import ALL_CONTRACTS  # noqa: F401
+    from benchmarks.fixtures.bridge_contracts_v2 import ALL_CONTRACTS  # noqa: F401
     from agents.benchmark_v2_runner import run_benchmark
 
     if os.environ.get("USE_BIFROST") != "1":

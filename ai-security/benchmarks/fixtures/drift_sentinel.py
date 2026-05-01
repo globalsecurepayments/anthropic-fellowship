@@ -18,7 +18,7 @@ Upgrade path (future, not implemented):
     current 22-contract dataset but worth it at 100+ contracts.
 
 Usage:
-    from benchmarks.drift_sentinel import check_drift, establish_baseline
+    from benchmarks.fixtures.drift_sentinel import check_drift, establish_baseline
 
     # First run: establishes baseline
     establish_baseline()
@@ -41,7 +41,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from benchmarks.bridge_contracts_v2 import ALL_CONTRACTS
+from benchmarks.fixtures.bridge_contracts_v2 import ALL_CONTRACTS
 
 
 BASELINE_PATH = Path(__file__).parent / "drift_baseline.json"

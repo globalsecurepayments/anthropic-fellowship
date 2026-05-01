@@ -13,7 +13,7 @@ Total: 20 contracts, 50+ labeled vulnerabilities.
 """
 
 # Import original 4 contracts
-from benchmarks.test_contracts import TEST_CONTRACTS as _ORIGINAL
+from benchmarks.fixtures.test_contracts import TEST_CONTRACTS as _ORIGINAL
 
 # ─── Contract 5: LiFi-style arbitrary calldata ────────────────────
 

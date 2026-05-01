@@ -23,7 +23,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from benchmarks.bridge_contracts_v2 import ALL_CONTRACTS
+from benchmarks.fixtures.bridge_contracts_v2 import ALL_CONTRACTS
 from agents.agent_v2_bridge import analyze_with_agent_v2, AgentV2Finding
 from agents.static_analyzer_v2 import analyze_static
 from agents.benchmark_v2_runner import run_benchmark, evaluate_contract

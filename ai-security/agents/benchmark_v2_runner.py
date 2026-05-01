@@ -13,8 +13,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from benchmarks.bridge_contracts_v2 import ALL_CONTRACTS
-from benchmarks.bridge_exploits import TAXONOMY_VERSION
+from benchmarks.fixtures.bridge_contracts_v2 import ALL_CONTRACTS
+from benchmarks.fixtures.bridge_exploits import TAXONOMY_VERSION
 from agents.static_analyzer_v2 import analyze_static, StaticFinding
 
 
@@ -233,7 +233,7 @@ def run_benchmark(analyzer_fn, dataset=None, verbose=True):
         dataset = ALL_CONTRACTS
 
     # Drift Sentinel (Stummer P3) — check dataset integrity before scoring
-    from benchmarks.drift_sentinel import check_drift
+    from benchmarks.fixtures.drift_sentinel import check_drift
     drift = check_drift(dataset)
     if drift.drifted:
         print(f"  WARNING: {drift.message}")

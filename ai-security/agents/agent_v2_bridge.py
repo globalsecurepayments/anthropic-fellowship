@@ -199,7 +199,7 @@ def analyze_with_agent_v2(source_code: str, contract_name: str = "Unknown") -> l
 
 def run_agent_v2_benchmark():
     """Run agent v2 against all 20 contracts and compare."""
-    from benchmarks.bridge_contracts_v2 import ALL_CONTRACTS
+    from benchmarks.fixtures.bridge_contracts_v2 import ALL_CONTRACTS
     from agents.benchmark_v2_runner import run_benchmark
     from agents.static_analyzer_v2 import analyze_static
 

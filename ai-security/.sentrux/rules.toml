@@ -44,28 +44,32 @@ no_god_files = false
 
 # ── Layers ─────────────────────────────────────────────────────────────────
 #
-# Order matches actual call direction in BRIDGE-bench (excluding benchmarks/):
-#   dashboard (0, outermost — visualizes everything below)
+# Order matches actual call direction in BRIDGE-bench:
+#   benchmarks/runners (0, top — entrypoints calling agents+evals+apo+fixtures)
+#   dashboard          (0, top — visualization surface, parallel)
 #     ↓ depends on
 #   apo (1, optimizer over evals)
 #     ↓ depends on
 #   evals (2, harness that scores agents)
 #     ↓ depends on
-#   agents (3, foundational unit-under-test)
+#   agents (3, the unit-under-test)
+#     ↓ depends on
+#   benchmarks/fixtures (4, foundational data — contract specs, exploit catalog,
+#                         drift sentinel utilities, test contracts)
 #
-# This structure enforces both boundary callouts in CR #755:
-#   - agents (3) ↛ dashboard (0)   (from_ord=3 > to_ord=0  ⇒ violation)
-#   - evals  (2) ↛ apo       (1)   (from_ord=2 > to_ord=1  ⇒ violation)
-# The explicit [[boundaries]] below pin those two specific guarantees with
-# named, self-documenting reasons that survive future layer-order changes.
+# This structure enforces all named guarantees:
+#   - agents (3) ↛ dashboard (0)            ⇒ layer violation
+#   - evals  (2) ↛ apo (1)                  ⇒ layer violation
+#   - benchmarks/fixtures (4) ↛ everything  ⇒ fixtures stay pure data
 #
-# benchmarks/ is INTENTIONALLY OMITTED from layers because it co-locates
-# two semantic concerns: high-level runners (bridge_bench.py, fetch_contracts.py)
-# AND foundational fixture/spec data (bridge_contracts_v2.py, test_contracts.py,
-# bridge_exploits.py) that agents/evals/apo all import legitimately. A proper
-# fix is to split benchmarks/ into benchmarks/runners/ + benchmarks/fixtures/
-# in a follow-up CR; until then a single layer over benchmarks/** generates
-# 16 false positives and would force `sentrux check` to be ignored.
+# Phase 1 of CR #755 had benchmarks/ omitted because the directory mixed
+# runners and fixture data; this follow-up split it into runners/ + fixtures/
+# so both halves can carry layer rules without false positives.
+
+[[layers]]
+name = "benchmarks-runners"
+paths = ["benchmarks/runners/**"]
+order = 0
 
 [[layers]]
 name = "dashboard"
@@ -86,6 +90,11 @@ order = 2
 name = "agents"
 paths = ["agents/**"]
 order = 3
+
+[[layers]]
+name = "benchmarks-fixtures"
+paths = ["benchmarks/fixtures/**"]
+order = 4
 
 # ── Boundaries (explicit, named) ───────────────────────────────────────────
 

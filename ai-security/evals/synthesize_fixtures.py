@@ -48,7 +48,7 @@ EVOLUTION_STRATEGIES = {
 def load_exploit_corpus() -> list[str]:
     """Render bridge_exploits.py metadata into prose source documents."""
     sys.path.insert(0, str(REPO_ROOT))
-    from benchmarks.bridge_exploits import BRIDGE_EXPLOITS  # type: ignore
+    from benchmarks.fixtures.bridge_exploits import BRIDGE_EXPLOITS  # type: ignore
 
     docs: list[str] = []
     for exploit in BRIDGE_EXPLOITS:

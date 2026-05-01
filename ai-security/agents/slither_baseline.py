@@ -20,7 +20,7 @@ from dataclasses import dataclass
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from benchmarks.bridge_contracts_v2 import ALL_CONTRACTS
+from benchmarks.fixtures.bridge_contracts_v2 import ALL_CONTRACTS
 from agents.benchmark_v2_runner import fuzzy_match, evaluate_contract
 
 
